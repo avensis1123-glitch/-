@@ -1,0 +1,241 @@
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ランダムピック</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* フォント設定と基本的なモバイル対応 */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        /* スライダーの見た目を調整（特にモバイルで操作しやすく） */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 28px;
+            width: 28px;
+            border-radius: 50%;
+            background: #3b82f6; /* Blue 500 */
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: background 0.3s, transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:active {
+             transform: scale(1.1);
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            background: #2563eb; /* Blue 600 */
+        }
+        /* 結果の数字を見やすく */
+        #result-display span {
+            display: inline-block;
+            background-color: #dbeafe; /* Blue 100 */
+            color: #1e40af; /* Blue 800 */
+            padding: 10px 16px;
+            margin: 6px;
+            border-radius: 9999px; /* Full rounded */
+            font-weight: 700;
+            font-size: 1.125rem; /* text-lg */
+            min-width: 56px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 min-h-screen flex items-start justify-center">
+
+    <div class="w-full max-w-lg bg-white p-6 sm:p-8 rounded-2xl shadow-xl">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">ランダムピック</h1>
+        
+        <!-- 設定エリア -->
+        <div class="mb-8 p-4 bg-blue-50 rounded-xl border border-blue-200">
+            <label for="max-number" class="block text-lg font-semibold text-gray-700 mb-3">
+                頭数の上限 (1〜18)
+            </label>
+            
+            <div class="flex items-center space-x-4">
+                <input type="range" id="max-number" min="1" max="18" value="10" class="flex-grow">
+                <span id="max-value-span" class="text-4xl font-extrabold text-blue-600 w-16 text-center">10</span>
+            </div>
+            
+            <p class="text-sm text-gray-500 mt-4">
+                頭数: <span id="n-value" class="font-bold text-blue-700">10</span> <!-- Nの表記を削除 -->
+                | ピックする個数: <span id="k-value" class="font-bold text-blue-700">6</span> <!-- Kの表記を削除 -->
+            </p>
+        </div>
+
+        <!-- ボタン -->
+        <button id="pick-button" class="w-full py-4 bg-blue-600 text-white font-black text-xl rounded-xl shadow-xl hover:bg-blue-700 transition duration-150 ease-in-out transform hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-blue-300">
+            ランダムで数字をピックする
+        </button>
+
+        <!-- 結果エリア -->
+        <div class="mt-8">
+            <h2 class="text-xl font-bold text-gray-700 mb-4">結果の数字</h2>
+            <div id="result-container" class="min-h-[120px] p-4 bg-white border-2 border-dashed border-gray-300 rounded-xl flex flex-col justify-center items-center">
+                <p id="initial-message" class="text-gray-500 text-center text-lg italic">↑ボタンでスタート↑</p>
+                <div id="result-display" class="flex flex-wrap justify-center p-2">
+                    <!-- 結果の数字がここに追加されます -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- メッセージボックス (alertの代替) -->
+        <div id="message-box" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+            <div class="bg-white p-6 rounded-xl shadow-2xl max-w-xs w-full text-center">
+                <svg class="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <p id="message-text" class="text-gray-800 font-medium mb-4 text-lg"></p>
+                <button onclick="hideMessage()" class="w-full py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition shadow-md">閉じる</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const maxNumberInput = document.getElementById('max-number');
+        const maxValueSpan = document.getElementById('max-value-span');
+        const pickButton = document.getElementById('pick-button');
+        const resultDisplay = document.getElementById('result-display');
+        const nValueSpan = document.getElementById('n-value');
+        const kValueSpan = document.getElementById('k-value');
+        const initialMessage = document.getElementById('initial-message');
+        
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+
+        const MIN_LIMIT = 1;
+        const MAX_LIMIT = 18;
+
+        /**
+         * カスタムメッセージボックスを表示する（alertの代替）
+         * @param {string} message - 表示するメッセージ
+         */
+        function showMessage(message) {
+            messageText.textContent = message;
+            messageBox.style.display = 'flex';
+        }
+
+        /**
+         * カスタムメッセージボックスを非表示にする
+         */
+        function hideMessage() {
+            messageBox.style.display = 'none';
+        }
+        
+        /**
+         * Nの過半数Kを計算する。
+         * K = floor(N / 2) + 1
+         * @param {number} N - 最大値
+         * @returns {number} 過半数の個数K
+         */
+        function getMajorityCount(N) {
+            // Nの半分を切り捨てて+1 (過半数の定義)
+            return Math.floor(N / 2) + 1;
+        }
+
+        /**
+         * 1からNまでの整数の中からK個の数字を重複なくランダムで選出する
+         * @param {number} N - 最大値
+         * @param {number} K - 選出個数
+         * @returns {number[]} 選出された数字の配列
+         */
+        function pickRandomNumbers(N, K) {
+            // 1からNまでの整数の配列を作成
+            const sourceArray = Array.from({ length: N }, (_, i) => i + 1);
+
+            // Fisher-Yatesシャッフルアルゴリズムでランダムに並び替える
+            for (let i = sourceArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                // スワップ
+                [sourceArray[i], sourceArray[j]] = [sourceArray[j], sourceArray[i]];
+            }
+
+            // シャッフルされた配列の最初のK個を結果とする
+            return sourceArray.slice(0, K);
+        }
+
+        /**
+         * UIのNとKの値を更新する
+         * @param {number} N - 選択された最大値
+         * @param {number} K - 計算された選出個数
+         */
+        function updateNKDisplay(N, K) {
+            nValueSpan.textContent = N;
+            kValueSpan.textContent = K;
+            maxValueSpan.textContent = N;
+        }
+
+        /**
+         * スライダーの値が変更されたときの処理
+         */
+        function handleSliderChange() {
+            const N = parseInt(maxNumberInput.value);
+            const K = getMajorityCount(N);
+            updateNKDisplay(N, K);
+            // 値が変わったら結果をリセット
+            resultDisplay.innerHTML = '';
+            initialMessage.classList.remove('hidden');
+        }
+
+        /**
+         * ボタンがクリックされたときの処理
+         */
+        function handlePick() {
+            const N = parseInt(maxNumberInput.value);
+            const K = getMajorityCount(N);
+
+            if (N < MIN_LIMIT || N > MAX_LIMIT) {
+                showMessage(`Nは${MIN_LIMIT}から${MAX_LIMIT}の間に設定してください。`);
+                return;
+            }
+            
+            // ランダムピックを実行
+            const pickedNumbers = pickRandomNumbers(N, K);
+            
+            // 結果をUIに表示
+            resultDisplay.innerHTML = '';
+            initialMessage.classList.add('hidden');
+            
+            if (pickedNumbers.length === 0) {
+                resultDisplay.innerHTML = '<p class="text-red-500 font-medium">選出に失敗しました。値を再確認してください。</p>';
+                return;
+            }
+
+            // 選出された数字を一つずつspanタグにして表示し、見やすいように昇順にソート
+            pickedNumbers
+                .sort((a, b) => a - b)
+                .forEach(num => {
+                    const span = document.createElement('span');
+                    span.textContent = num;
+                    resultDisplay.appendChild(span);
+                });
+        }
+        
+        // 初期化処理とイベントリスナーの設定
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初期値を10としてUIを更新
+            maxNumberInput.value = 10;
+            handleSliderChange(); 
+
+            // イベントリスナー
+            maxNumberInput.addEventListener('input', handleSliderChange);
+            pickButton.addEventListener('click', handlePick);
+        });
+
+    </script>
+</body>
+</html>
+
