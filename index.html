@@ -1,241 +1,292 @@
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ランダムピック</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* フォント設定と基本的なモバイル対応 */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7f9fb;
-        }
-        /* スライダーの見た目を調整（特にモバイルで操作しやすく） */
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 8px;
-            background: #e0e0e0;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 10px 0;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 28px;
-            width: 28px;
-            border-radius: 50%;
-            background: #3b82f6; /* Blue 500 */
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-            transition: background 0.3s, transform 0.1s;
-        }
-        input[type=range]::-webkit-slider-thumb:active {
-             transform: scale(1.1);
-        }
-        input[type=range]::-webkit-slider-thumb:hover {
-            background: #2563eb; /* Blue 600 */
-        }
-        /* 結果の数字を見やすく */
-        #result-display span {
-            display: inline-block;
-            background-color: #dbeafe; /* Blue 100 */
-            color: #1e40af; /* Blue 800 */
-            padding: 10px 16px;
-            margin: 6px;
-            border-radius: 9999px; /* Full rounded */
-            font-weight: 700;
-            font-size: 1.125rem; /* text-lg */
-            min-width: 56px;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: transform 0.1s;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ゴルフコンペ成績発表</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .reveal-item {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+    .reveal-item.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .gold-gradient {
+      background: linear-gradient(135deg, #fef08a 0%, #eab308 50%, #ca8a04 100%);
+      color: #422006 !important;
+      border: 2px solid #eab308;
+    }
+    .skull-dark {
+      background: linear-gradient(135deg, #374151 0%, #111827 100%);
+      color: #f3f4f6 !important;
+      border: 2px solid #030712;
+    }
+    .skull-dark .text-gray-500 {
+      color: #9ca3af !important;
+    }
+  </style>
 </head>
-<body class="p-4 sm:p-8 min-h-screen flex items-start justify-center">
+<body class="bg-gray-100 font-sans antialiased min-h-screen text-gray-800 pb-16">
+  <div class="max-w-3xl mx-auto pt-10 px-4">
+    <header class="text-center mb-8">
+      <h1 class="text-3xl font-bold tracking-tight text-gray-900 mb-2">🏆 ゴルフコンペ成績発表</h1>
+      <p class="text-sm font-medium text-gray-600 bg-gray-200 inline-block px-4 py-1 rounded-full">
+        隠しホール設定 ⛳ OUT: 1, 4, 5 ／ IN: 10, 12, 14
+      </p>
+    </header>
 
-    <div class="w-full max-w-lg bg-white p-6 sm:p-8 rounded-2xl shadow-xl">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">ランダムピック</h1>
-        
-        <!-- 設定エリア -->
-        <div class="mb-8 p-4 bg-blue-50 rounded-xl border border-blue-200">
-            <label for="max-number" class="block text-lg font-semibold text-gray-700 mb-3">
-                頭数の上限 (1〜18)
-            </label>
-            
-            <div class="flex items-center space-x-4">
-                <input type="range" id="max-number" min="1" max="18" value="10" class="flex-grow">
-                <span id="max-value-span" class="text-4xl font-extrabold text-blue-600 w-16 text-center">10</span>
-            </div>
-            
-            <p class="text-sm text-gray-500 mt-4">
-                頭数: <span id="n-value" class="font-bold text-blue-700">10</span> <!-- Nの表記を削除 -->
-                | ピックする個数: <span id="k-value" class="font-bold text-blue-700">6</span> <!-- Kの表記を削除 -->
-            </p>
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+      <div class="flex border-b text-center">
+        <button id="btn-out" class="flex-1 py-4 text-sm font-medium border-b-2 border-blue-600 text-blue-600 transition-colors" onclick="switchTab('out')">OUT 発表</button>
+        <button id="btn-in" class="flex-1 py-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors" onclick="switchTab('in')">IN 発表</button>
+        <button id="btn-list" class="flex-1 py-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors" onclick="switchTab('list')">RESULTS LIST</button>
+      </div>
+
+      <div class="p-6">
+        <div id="out-tab">
+          <div class="text-center mb-6">
+            <button id="out-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">
+              結果を順に発表する
+            </button>
+          </div>
+          <div id="out-list" class="space-y-3 flex flex-col"></div>
         </div>
 
-        <!-- ボタン -->
-        <button id="pick-button" class="w-full py-4 bg-blue-600 text-white font-black text-xl rounded-xl shadow-xl hover:bg-blue-700 transition duration-150 ease-in-out transform hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-blue-300">
-            ランダムで数字をピックする
-        </button>
-
-        <!-- 結果エリア -->
-        <div class="mt-8">
-            <h2 class="text-xl font-bold text-gray-700 mb-4">結果の数字</h2>
-            <div id="result-container" class="min-h-[120px] p-4 bg-white border-2 border-dashed border-gray-300 rounded-xl flex flex-col justify-center items-center">
-                <p id="initial-message" class="text-gray-500 text-center text-lg italic">↑ボタンでスタート↑</p>
-                <div id="result-display" class="flex flex-wrap justify-center p-2">
-                    <!-- 結果の数字がここに追加されます -->
-                </div>
-            </div>
-        </div>
-        
-        <!-- メッセージボックス (alertの代替) -->
-        <div id="message-box" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
-            <div class="bg-white p-6 rounded-xl shadow-2xl max-w-xs w-full text-center">
-                <svg class="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                <p id="message-text" class="text-gray-800 font-medium mb-4 text-lg"></p>
-                <button onclick="hideMessage()" class="w-full py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition shadow-md">閉じる</button>
-            </div>
+        <div id="in-tab" class="hidden">
+          <div class="text-center mb-6">
+            <button id="in-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">
+              結果を順に発表する
+            </button>
+          </div>
+          <div id="in-list" class="space-y-3 flex flex-col"></div>
         </div>
 
+        <div id="list-tab" class="hidden">
+          <div id="list-tab-content"></div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <script>
-        const maxNumberInput = document.getElementById('max-number');
-        const maxValueSpan = document.getElementById('max-value-span');
-        const pickButton = document.getElementById('pick-button');
-        const resultDisplay = document.getElementById('result-display');
-        const nValueSpan = document.getElementById('n-value');
-        const kValueSpan = document.getElementById('k-value');
-        const initialMessage = document.getElementById('initial-message');
+  <script>
+    // 1. データ定義と隠しホールのハードコード
+    const data = {
+      "course": {
+        "OUT_par": [4, 4, 4, 3, 5, 4, 3, 5, 4],
+        "IN_par": [4, 4, 3, 4, 5, 4, 5, 3, 4]
+      },
+      "players": [
+        {"name": "プレイヤーA", "scores": [4, 5, 4, 3, 5, 4, 4, 6, 4, 4, 5, 4, 4, 6, 5, 6, 3, 4]},
+        {"name": "プレイヤーB", "scores": [4, 4, 5, 4, 6, 5, 3, 6, 5, 5, 5, 4, 5, 6, 4, 6, 4, 5]},
+        {"name": "プレイヤーC", "scores": [4, 5, 5, 4, 6, 5, 4, 6, 5, 4, 5, 4, 5, 6, 5, 6, 4, 5]},
+        {"name": "プレイヤーD", "scores": [5, 4, 4, 4, 5, 4, 4, 5, 5, 5, 4, 3, 5, 5, 5, 6, 4, 5]},
+        {"name": "プレイヤーE", "scores": [4, 4, 4, 3, 6, 4, 3, 5, 5, 4, 4, 4, 4, 5, 4, 5, 4, 5]},
+        {"name": "プレイヤーF", "scores": [5, 5, 5, 3, 7, 5, 4, 6, 5, 5, 5, 4, 5, 7, 5, 6, 4, 5]},
+        {"name": "プレイヤーG", "scores": [4, 5, 4, 4, 6, 4, 4, 5, 4, 5, 5, 3, 4, 6, 5, 5, 3, 5]},
+        {"name": "プレイヤーH", "scores": [4, 5, 5, 4, 6, 5, 4, 6, 5, 4, 5, 4, 5, 6, 5, 6, 4, 5]},
+        {"name": "プレイヤーI", "scores": [5, 6, 6, 4, 7, 5, 5, 7, 5, 5, 5, 5, 6, 7, 6, 7, 5, 6]},
+        {"name": "プレイヤーJ", "scores": [4, 4, 4, 3, 6, 4, 3, 5, 5, 4, 4, 4, 4, 5, 4, 5, 4, 5]}
+      ]
+    };
+
+    // ハードコードされた隠しホール (インデックス: 0始まり)
+    // OUT: Hole 1(Par4=0), Hole 4(Par3=3), Hole 5(Par5=4)
+    const outHiddenIndices = [0, 3, 4];
+    // IN: Hole 10(Par4=0), Hole 12(Par3=2), Hole 14(Par5=4)
+    const inHiddenIndices = [0, 2, 4];
+
+    // 2. スコア計算処理 (簡易新ペリア)
+    function calculateResults(half) {
+      const isOut = half === 'OUT';
+      const hiddenIndices = isOut ? outHiddenIndices : inHiddenIndices;
+      const offset = isOut ? 0 : 9;
+      const parArray = isOut ? data.course.OUT_par : data.course.IN_par;
+      const parTotal = parArray.reduce((a, b) => a + b, 0); // 36
+
+      const results = data.players.map(p => {
+        const halfScores = p.scores.slice(offset, offset + 9);
+        const gross = halfScores.reduce((a, b) => a + b, 0);
+        const hiddenGross = hiddenIndices.reduce((a, idx) => a + halfScores[idx], 0);
         
-        const messageBox = document.getElementById('message-box');
-        const messageText = document.getElementById('message-text');
+        const hdcp = (hiddenGross * 3 - parTotal) * 0.8;
+        const net = parseFloat((gross - hdcp).toFixed(1));
 
-        const MIN_LIMIT = 1;
-        const MAX_LIMIT = 18;
+        return { name: p.name, gross, hdcp: hdcp.toFixed(1), net };
+      });
 
-        /**
-         * カスタムメッセージボックスを表示する（alertの代替）
-         * @param {string} message - 表示するメッセージ
-         */
-        function showMessage(message) {
-            messageText.textContent = message;
-            messageBox.style.display = 'flex';
-        }
+      // 順位付け: ネット昇順 -> グロス昇順
+      results.sort((a, b) => {
+        if (a.net !== b.net) return a.net - b.net;
+        return a.gross - b.gross;
+      });
 
-        /**
-         * カスタムメッセージボックスを非表示にする
-         */
-        function hideMessage() {
-            messageBox.style.display = 'none';
-        }
+      return results.map((r, i) => ({ ...r, rank: i + 1 }));
+    }
+
+    const resultsOut = calculateResults('OUT');
+    const resultsIn = calculateResults('IN');
+
+    // 3. アニメーション付き発表管理クラス
+    class Presentation {
+      constructor(containerId, buttonId, results) {
+        this.container = document.getElementById(containerId);
+        this.button = document.getElementById(buttonId);
+        this.results = results;
         
-        /**
-         * Nの過半数Kを計算する。
-         * K = floor(N / 2) + 1
-         * @param {number} N - 最大値
-         * @returns {number} 過半数の個数K
-         */
-        function getMajorityCount(N) {
-            // Nの半分を切り捨てて+1 (過半数の定義)
-            return Math.floor(N / 2) + 1;
-        }
-
-        /**
-         * 1からNまでの整数の中からK個の数字を重複なくランダムで選出する
-         * @param {number} N - 最大値
-         * @param {number} K - 選出個数
-         * @returns {number[]} 選出された数字の配列
-         */
-        function pickRandomNumbers(N, K) {
-            // 1からNまでの整数の配列を作成
-            const sourceArray = Array.from({ length: N }, (_, i) => i + 1);
-
-            // Fisher-Yatesシャッフルアルゴリズムでランダムに並び替える
-            for (let i = sourceArray.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                // スワップ
-                [sourceArray[i], sourceArray[j]] = [sourceArray[j], sourceArray[i]];
-            }
-
-            // シャッフルされた配列の最初のK個を結果とする
-            return sourceArray.slice(0, K);
-        }
-
-        /**
-         * UIのNとKの値を更新する
-         * @param {number} N - 選択された最大値
-         * @param {number} K - 計算された選出個数
-         */
-        function updateNKDisplay(N, K) {
-            nValueSpan.textContent = N;
-            kValueSpan.textContent = K;
-            maxValueSpan.textContent = N;
-        }
-
-        /**
-         * スライダーの値が変更されたときの処理
-         */
-        function handleSliderChange() {
-            const N = parseInt(maxNumberInput.value);
-            const K = getMajorityCount(N);
-            updateNKDisplay(N, K);
-            // 値が変わったら結果をリセット
-            resultDisplay.innerHTML = '';
-            initialMessage.classList.remove('hidden');
-        }
-
-        /**
-         * ボタンがクリックされたときの処理
-         */
-        function handlePick() {
-            const N = parseInt(maxNumberInput.value);
-            const K = getMajorityCount(N);
-
-            if (N < MIN_LIMIT || N > MAX_LIMIT) {
-                showMessage(`Nは${MIN_LIMIT}から${MAX_LIMIT}の間に設定してください。`);
-                return;
-            }
-            
-            // ランダムピックを実行
-            const pickedNumbers = pickRandomNumbers(N, K);
-            
-            // 結果をUIに表示
-            resultDisplay.innerHTML = '';
-            initialMessage.classList.add('hidden');
-            
-            if (pickedNumbers.length === 0) {
-                resultDisplay.innerHTML = '<p class="text-red-500 font-medium">選出に失敗しました。値を再確認してください。</p>';
-                return;
-            }
-
-            // 選出された数字を一つずつspanタグにして表示し、見やすいように昇順にソート
-            pickedNumbers
-                .sort((a, b) => a - b)
-                .forEach(num => {
-                    const span = document.createElement('span');
-                    span.textContent = num;
-                    resultDisplay.appendChild(span);
-                });
+        // 発表順序: 9位(idx:8) -> 2位(idx:1) (※0始まりインデックス)
+        this.revealSequence = [];
+        for (let i = this.results.length - 2; i >= 1; i--) {
+          this.revealSequence.push(i);
         }
         
-        // 初期化処理とイベントリスナーの設定
-        document.addEventListener('DOMContentLoaded', () => {
-            // 初期値を10としてUIを更新
-            maxNumberInput.value = 10;
-            handleSliderChange(); 
+        this.currentStep = 0;
+        this.isFinal = false;
 
-            // イベントリスナー
-            maxNumberInput.addEventListener('input', handleSliderChange);
-            pickButton.addEventListener('click', handlePick);
+        this.renderInitial();
+        this.button.addEventListener('click', () => this.nextReveal());
+      }
+
+      renderInitial() {
+        this.container.innerHTML = '';
+        this.results.forEach((p, i) => {
+          const div = document.createElement('div');
+          div.id = `${this.container.id}-item-${i}`;
+          // 順位順（1位が上）になるようにCSSのorderを利用して視覚的な並びを維持
+          div.className = `reveal-item hidden p-4 rounded shadow flex justify-between items-center bg-white border border-gray-200 order-${i}`;
+          div.style.order = i;
+
+          let rankHtml = `<span class="text-xl font-bold text-gray-500">${p.rank}位</span>`;
+          let extraClass = '';
+
+          if (i === 0) { // 優勝
+            extraClass = 'gold-gradient shadow-xl transform scale-105 transition-transform duration-500 z-10';
+            rankHtml = `<span class="text-2xl font-black flex items-center gap-2">👑 優勝</span>`;
+          } else if (i === this.results.length - 1) { // 最下位
+            extraClass = 'skull-dark shadow-md';
+            rankHtml = `<span class="text-xl font-bold flex items-center gap-2">💀 最下位</span>`;
+          }
+
+          div.innerHTML = `
+            <div class="flex items-center gap-4">
+              <div class="w-32">${rankHtml}</div>
+              <div class="text-lg font-semibold">${p.name}</div>
+            </div>
+            <div class="text-right text-sm">
+              <div class="mb-1">Net: <span class="text-2xl font-bold">${p.net.toFixed(1)}</span></div>
+              <div class="text-gray-500 text-xs">Gross: ${p.gross} (Hdcp: ${p.hdcp})</div>
+            </div>
+          `;
+
+          if (i === 0 || i === this.results.length - 1) {
+             div.dataset.specialClass = extraClass;
+          }
+
+          this.container.appendChild(div);
         });
+      }
 
-    </script>
+      nextReveal() {
+        if (this.isFinal) {
+          this.revealSpecial(0); // 優勝
+          this.revealSpecial(this.results.length - 1); // 最下位
+          
+          this.button.disabled = true;
+          this.button.textContent = '全順位発表完了';
+          this.button.classList.replace('bg-red-600', 'bg-gray-400');
+          this.button.classList.replace('hover:bg-red-700', 'hover:bg-gray-400');
+          this.button.classList.remove('hover:scale-105');
+          this.button.classList.add('cursor-not-allowed');
+          return;
+        }
+
+        const idxToReveal = this.revealSequence[this.currentStep];
+        this.revealNormal(idxToReveal);
+        this.currentStep++;
+
+        if (this.currentStep >= this.revealSequence.length) {
+          this.isFinal = true;
+          this.button.textContent = '優勝とラスを発表する';
+          this.button.classList.replace('bg-blue-600', 'bg-red-600');
+          this.button.classList.replace('hover:bg-blue-700', 'hover:bg-red-700');
+        }
+      }
+
+      revealNormal(index) {
+        const el = document.getElementById(`${this.container.id}-item-${index}`);
+        el.classList.remove('hidden');
+        void el.offsetWidth; // リフロー強制
+        el.classList.add('show');
+      }
+
+      revealSpecial(index) {
+        const el = document.getElementById(`${this.container.id}-item-${index}`);
+        el.classList.remove('hidden', 'bg-white', 'border-gray-200');
+        el.className += ' ' + el.dataset.specialClass;
+        void el.offsetWidth; // リフロー強制
+        el.classList.add('show');
+      }
+    }
+
+    // インスタンス化
+    new Presentation('out-list', 'out-btn', resultsOut);
+    new Presentation('in-list', 'in-btn', resultsIn);
+
+    // 4. RESULTS LIST 描画
+    function renderResultsList() {
+      const container = document.getElementById('list-tab-content');
+      
+      const createTable = (results, title) => `
+        <div class="mb-8">
+          <h3 class="text-xl font-bold mb-4 border-l-4 border-blue-600 pl-3 text-gray-800">${title}</h3>
+          <div class="overflow-x-auto rounded-lg border border-gray-200">
+            <table class="w-full text-sm text-left text-gray-600">
+              <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b">
+                <tr>
+                  <th class="px-6 py-3">順位</th>
+                  <th class="px-6 py-3">名前</th>
+                  <th class="px-6 py-3 text-right">Gross</th>
+                  <th class="px-6 py-3 text-right">Hdcp</th>
+                  <th class="px-6 py-3 text-right bg-blue-50">Net</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${results.map((r, i) => `
+                  <tr class="bg-white border-b hover:bg-gray-50 transition-colors ${i === 0 ? 'bg-yellow-50' : ''}">
+                    <td class="px-6 py-4 font-bold ${i === 0 ? 'text-yellow-600' : 'text-gray-900'}">${r.rank}</td>
+                    <td class="px-6 py-4 font-medium text-gray-900">${r.name}</td>
+                    <td class="px-6 py-4 text-right">${r.gross}</td>
+                    <td class="px-6 py-4 text-right">${r.hdcp}</td>
+                    <td class="px-6 py-4 text-right font-bold text-blue-600 bg-blue-50/30">${r.net.toFixed(1)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = createTable(resultsOut, 'OUT ハーフ結果') + createTable(resultsIn, 'IN ハーフ結果');
+    }
+    renderResultsList();
+
+    // 5. タブ切り替え処理
+    function switchTab(tabName) {
+      ['out', 'in', 'list'].forEach(name => {
+        document.getElementById(`${name}-tab`).classList.add('hidden');
+        const btn = document.getElementById(`btn-${name}`);
+        btn.classList.remove('border-blue-600', 'text-blue-600');
+        btn.classList.add('border-transparent', 'text-gray-500');
+      });
+
+      document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`btn-${tabName}`);
+      activeBtn.classList.remove('border-transparent', 'text-gray-500');
+      activeBtn.classList.add('border-blue-600', 'text-blue-600');
+    }
+  </script>
 </body>
 </html>
-
