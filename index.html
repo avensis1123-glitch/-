@@ -12,7 +12,6 @@
         margin: 0;
         padding: 0;
     }
-    /* 画面切り替え用のクラス */
     .view-section { display: none; padding-bottom: 80px; }
     .view-section.active { display: block; }
     
@@ -190,7 +189,7 @@
                     <div><span>H18:</span><select id="parHole18"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
                 </div>
                 
-                <button class="btn" onclick="startGame()">ラウンド開始</button>
+                <button class="btn" id="startBtn">ラウンド開始</button>
             </div>
         </div>
     </div>
@@ -211,7 +210,7 @@
                 <div class="card-title">
                     <span id="currentHoleLabel">Hole -- (1/18)</span>
                     <span style="font-size: 0.9rem; font-weight: normal;">Par 
-                        <select id="currentPar" onchange="calcPreview()" style="width:60px; padding: 4px;">
+                        <select id="currentPar" style="width:60px; padding: 4px;">
                             <option value="3">3</option><option value="4">4</option><option value="5">5</option>
                         </select>
                     </span>
@@ -221,23 +220,23 @@
 
                 <div class="score-row">
                     <label>オナー<br><span style="font-size:0.7rem; font-weight:normal; color:#e74c3c;">(ﾁｰﾑX)</span></label>
-                    <select id="b1_player" onchange="calcPreview()"></select>
-                    <select id="b1_score" class="score-select" onchange="calcPreview()"></select>
+                    <select id="b1_player"></select>
+                    <select id="b1_score" class="score-select"></select>
                 </div>
                 <div class="score-row">
                     <label>2nd<br><span style="font-size:0.7rem; font-weight:normal; color:#2980b9;">(ﾁｰﾑY)</span></label>
-                    <select id="b2_player" onchange="calcPreview()"></select>
-                    <select id="b2_score" class="score-select" onchange="calcPreview()"></select>
+                    <select id="b2_player"></select>
+                    <select id="b2_score" class="score-select"></select>
                 </div>
                 <div class="score-row">
                     <label>3rd<br><span style="font-size:0.7rem; font-weight:normal; color:#2980b9;">(ﾁｰﾑY)</span></label>
-                    <select id="b3_player" onchange="calcPreview()"></select>
-                    <select id="b3_score" class="score-select" onchange="calcPreview()"></select>
+                    <select id="b3_player"></select>
+                    <select id="b3_score" class="score-select"></select>
                 </div>
                 <div class="score-row">
                     <label>4th<br><span style="font-size:0.7rem; font-weight:normal; color:#e74c3c;">(ﾁｰﾑX)</span></label>
-                    <select id="b4_player" onchange="calcPreview()"></select>
-                    <select id="b4_score" class="score-select" onchange="calcPreview()"></select>
+                    <select id="b4_player"></select>
+                    <select id="b4_score" class="score-select"></select>
                 </div>
 
                 <div class="hole-result">
@@ -254,8 +253,8 @@
                     </div>
                 </div>
 
-                <button class="btn" id="nextBtn" onclick="goToNextHole()">結果を保存して次へ進む</button>
-                <button class="btn btn-secondary" id="backBtn" onclick="goBack()" style="display:none;">一つ前のホールに戻る</button>
+                <button class="btn" id="nextBtn">結果を保存して次へ進む</button>
+                <button class="btn btn-secondary" id="backBtn" style="display:none;">一つ前のホールに戻る</button>
             </div>
         </div>
     </div>
@@ -265,7 +264,7 @@
             <div class="card">
                 <div class="card-title">ラウンド終了！</div>
                 <p style="text-align: center; margin-bottom: 20px;">全18ホールの集計が完了しました。</p>
-                <button class="btn btn-info" onclick="downloadCSV()">最終結果をCSVダウンロード</button>
+                <button class="btn btn-info" id="downloadBtn">最終結果をCSVダウンロード</button>
             </div>
         </div>
     </div>
@@ -279,27 +278,52 @@
     let players = [];
     let holeSequence = [];
     let currentStep = 0; 
-    let initialPars = {}; // 安全のためオブジェクト管理に変更
+    let initialPars = {}; 
     let roundData = []; 
     let currentCarryMultiplier = 1;
 
-    // 最も安全なDOM構築タイミングで初期化を実行
+    // 画面が開いた瞬間、最も安全なタイミングでイベントを紐付け
     document.addEventListener('DOMContentLoaded', function() {
-        const scoreSelects = document.querySelectorAll('.score-select');
-        scoreSelects.forEach(sel => {
-            sel.innerHTML = '';
-            let defOpt = document.createElement('option');
-            defOpt.value = '';
-            defOpt.textContent = '選択';
-            sel.appendChild(defOpt);
+        try {
+            // 【超重要】これが表示されればJavaScript全体のフリーズはありません
+            alert("【起動確認】アプリの読み込みに成功しました！");
 
-            for(let i=1; i<=MAX_SCORE; i++) {
-                let opt = document.createElement('option');
-                opt.value = String(i);
-                opt.textContent = i + '打';
-                sel.appendChild(opt);
-            }
-        });
+            // スコア選択肢の生成
+            const scoreSelects = document.querySelectorAll('.score-select');
+            scoreSelects.forEach(sel => {
+                sel.innerHTML = '';
+                let defOpt = document.createElement('option');
+                defOpt.value = '';
+                defOpt.textContent = '選択';
+                sel.appendChild(defOpt);
+
+                for(let i=1; i<=MAX_SCORE; i++) {
+                    let opt = document.createElement('option');
+                    opt.value = String(i);
+                    opt.textContent = i + '打';
+                    sel.appendChild(opt);
+                }
+            });
+
+            // HTML側のonclickを廃止し、ここでボタンの動作を100%確実に登録
+            document.getElementById('startBtn').addEventListener('click', startGame);
+            document.getElementById('nextBtn').addEventListener('click', goToNextHole);
+            document.getElementById('backBtn').addEventListener('click', goBack);
+            document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+
+            // 入力変更時のリアルタイム計算イベント登録
+            const changeTriggers = [
+                'currentPar', 'b1_player', 'b1_score', 'b2_player', 'b2_score', 
+                'b3_player', 'b3_score', 'b4_player', 'b4_score'
+            ];
+            changeTriggers.forEach(id => {
+                let el = document.getElementById(id);
+                if(el) el.addEventListener('change', calcPreview);
+            });
+
+        } catch (error) {
+            alert("初期設定エラー: " + error.message);
+        }
     });
 
     function startGame() {
@@ -311,12 +335,10 @@
                 document.getElementById('nameD').value || 'プレイヤー4'
             ];
 
-            // ヘッダーに名前反映
             for(let i=0; i<4; i++) {
                 document.getElementById(`h-name${i}`).textContent = players[i].substring(0,4);
             }
 
-            // 打者選択肢の生成
             const playerSelects = [
                 document.getElementById('b1_player'), document.getElementById('b2_player'),
                 document.getElementById('b3_player'), document.getElementById('b4_player')
@@ -332,7 +354,6 @@
                 }
             });
 
-            // ホール順の生成
             let sHole = parseInt(document.getElementById('startHoleInput').value, 10);
             holeSequence = [];
             for(let i=0; i<HOLES; i++) {
@@ -341,24 +362,21 @@
                 holeSequence.push(h);
             }
 
-            // 各ホールの規定パー数を固定取得
             initialPars = {};
             for(let i=1; i<=18; i++) {
                 let pEl = document.getElementById(`parHole${i}`);
                 initialPars[String(i)] = pEl ? pEl.value : "4";
             }
 
-            // 初期化
             roundData = [];
             currentStep = 0;
             currentCarryMultiplier = 1;
             updateHeaderTotals();
 
-            // 画面切り替え
             switchView('gameView');
             renderCurrentHole();
         } catch (error) {
-            alert("【デバッグ情報】開始処理でエラーが発生しました: " + error.message);
+            alert("開始処理エラー: " + error.message);
         }
     }
 
@@ -386,7 +404,6 @@
             } else {
                 document.getElementById('currentPar').value = String(initialPars[String(actualHole)] || "4");
 
-                // 打順ソートロジック
                 let currentOrder = [0, 1, 2, 3]; 
                 if (currentStep > 0) {
                     let prevData = roundData[currentStep - 1];
@@ -395,15 +412,11 @@
                         let idxB = prevData.batters.indexOf(b);
                         let scoreA = prevData.scores[idxA];
                         let scoreB = prevData.scores[idxB];
-                        
-                        if (scoreA !== scoreB) {
-                            return scoreA - scoreB;
-                        }
+                        if (scoreA !== scoreB) return scoreA - scoreB;
                         return idxA - idxB;
                     });
                 }
 
-                // 打順の自動セット
                 for(let j=1; j<=4; j++) {
                     document.getElementById(`b${j}_player`).value = String(currentOrder[j-1]);
                     document.getElementById(`b${j}_score`).value = '';
@@ -413,7 +426,7 @@
             document.getElementById('errorMsg').style.display = 'none';
             calcPreview();
         } catch (error) {
-            alert("【デバッグ情報】ホール表示処理でエラーが発生しました: " + error.message);
+            alert("ホール描画エラー: " + error.message);
         }
     }
 
@@ -459,4 +472,159 @@
             document.getElementById('preview_carry').textContent = currentCarryMultiplier + 'x';
 
             let diff = Math.abs(scoreA - scoreB);
-    
+            let cappedDiff = Math.min(diff, MAX_DIFF);
+            let pointsMoved = cappedDiff * currentCarryMultiplier;
+            
+            let pts = [0, 0, 0, 0];
+            if (scoreA < scoreB) {
+                pts[b[0]] += pointsMoved; pts[b[3]] += pointsMoved;
+                pts[b[1]] -= pointsMoved; pts[b[2]] -= pointsMoved;
+            } else if (scoreB < scoreA) {
+                pts[b[0]] -= pointsMoved; pts[b[3]] -= pointsMoved;
+                pts[b[1]] += pointsMoved; pts[b[2]] += pointsMoved;
+            }
+
+            let summaryText = "";
+            for(let p=0; p<4; p++) {
+                if(pts[p] !== 0) summaryText += `${players[p]}:${pts[p]>0?'+':''}${pts[p]}  `;
+            }
+            document.getElementById('preview_pts').textContent = summaryText || '同点引分 (次回へキャリー)';
+
+            return { scoreA, scoreB, pts, b, s, par }; 
+        } catch (error) {
+            console.error(error);
+            return false;
+        }
+    }
+
+    function resetPreviewDisplay() {
+        document.getElementById('preview_tA').textContent = '-';
+        document.getElementById('preview_tB').textContent = '-';
+        document.getElementById('preview_carry').textContent = currentCarryMultiplier + 'x';
+        document.getElementById('preview_pts').textContent = '-';
+    }
+
+    function getTeamScore(score1, score2, isReversed) {
+        let min = Math.min(score1, score2);
+        let max = Math.max(score1, score2);
+        return isReversed ? (max * 10 + min) : (min * 10 + max);
+    }
+
+    function goToNextHole() {
+        try {
+            let result = calcPreview();
+            if(result === false) {
+                alert("打者が重複しています。修正してください。");
+                return;
+            }
+            if(result === true) {
+                alert("全員の打数を選択してください。");
+                return;
+            }
+
+            roundData[currentStep] = {
+                holeNum: holeSequence[currentStep],
+                par: result.par,
+                batters: result.b,
+                scores: result.s,
+                scoreA: result.scoreA,
+                scoreB: result.scoreB,
+                pts: result.pts,
+                usedCarry: currentCarryMultiplier
+            };
+
+            if (result.scoreA === result.scoreB) {
+                currentCarryMultiplier++;
+            } else {
+                currentCarryMultiplier = 1;
+            }
+
+            updateHeaderTotals();
+            currentStep++;
+            if (currentStep >= HOLES) {
+                switchView('resultView');
+            } else {
+                renderCurrentHole();
+            }
+        } catch (error) {
+            alert("次へ進む処理エラー: " + error.message);
+        }
+    }
+
+    function goBack() {
+        try {
+            if(currentStep > 0) {
+                currentStep--;
+                recalcCarryUpToCurrent();
+                updateHeaderTotals();
+                renderCurrentHole();
+            }
+        } catch (error) {
+            alert("戻る処理エラー: " + error.message);
+        }
+    }
+
+    function recalcCarryUpToCurrent() {
+        currentCarryMultiplier = 1;
+        for(let i=0; i<currentStep; i++) {
+            let data = roundData[i];
+            if(data.scoreA === data.scoreB) {
+                currentCarryMultiplier++;
+            } else {
+                currentCarryMultiplier = 1;
+            }
+        }
+    }
+
+    function updateHeaderTotals() {
+        try {
+            let totals = [0, 0, 0, 0];
+            for(let i=0; i<currentStep; i++) {
+                for(let p=0; p<4; p++) {
+                    totals[p] += roundData[i].pts[p];
+                }
+            }
+            for (let p = 0; p < 4; p++) {
+                document.getElementById(`h-total${p}`).textContent = totals[p] > 0 ? '+' + totals[p] : String(totals[p]);
+                document.getElementById(`h-yen${p}`).textContent = '¥' + (totals[p] * RATE).toLocaleString();
+                let yenEl = document.getElementById(`h-yen${p}`);
+                yenEl.style.color = totals[p] < 0 ? '#e74c3c' : '#f1c40f';
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    function downloadCSV() {
+        try {
+            let csv = '\uFEFF'; 
+            let header = ['Hole', 'Par', 'オナー', 'オナー打数', '2nd', '2nd打数', '3rd', '3rd打数', '4th', '4th打数', 'チームX(1&4)得点', 'チームY(2&3)得点', '適用倍率'];
+            for(let p=0; p<4; p++) header.push(players[p] + ' Pt');
+            csv += header.join(',') + '\n';
+
+            for (let i = 0; i < HOLES; i++) {
+                let d = roundData[i];
+                if(!d) continue;
+                let row = [d.holeNum, d.par];
+                for(let j=0; j<4; j++) {
+                    row.push('"' + players[d.batters[j]] + '"', d.scores[j]);
+                }
+                row.push(d.scoreA, d.scoreB, d.usedCarry);
+                for(let p=0; p<4; p++) row.push(d.pts[p]);
+                csv += row.join(',') + '\n';
+            }
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute('download', 'lasvegas_wizard_result.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            alert("CSV出力エラー: " + error.message);
+        }
+    }
+</script>
+</body>
+</html>
