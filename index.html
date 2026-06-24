@@ -153,19 +153,41 @@
         <div class="container">
             <div class="card" style="margin-top: 10px;">
                 <div class="card-title">基本設定</div>
-                <div class="input-group"><label>プレイヤー1</label><input type="text" id="nameA" value="プレイヤー1"></div>
-                <div class="input-group"><label>プレイヤー2</label><input type="text" id="nameB" value="プレイヤー2"></div>
-                <div class="input-group"><label>プレイヤー3</label><input type="text" id="nameC" value="プレイヤー3"></div>
-                <div class="input-group"><label>プレイヤー4</label><input type="text" id="nameD" value="プレイヤー4"></div>
+                <div class="input-group"><label>初期オナー</label><input type="text" id="nameA" value="プレイヤー1"></div>
+                <div class="input-group"><label>初期2nd</label><input type="text" id="nameB" value="プレイヤー2"></div>
+                <div class="input-group"><label>初期3rd</label><input type="text" id="nameC" value="プレイヤー3"></div>
+                <div class="input-group"><label>初期4th</label><input type="text" id="nameD" value="プレイヤー4"></div>
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+                
                 <div class="input-group">
                     <label>開始ホール</label>
                     <select id="startHoleInput">
+                        <option value="1">1番ホール (OUTスタート)</option>
+                        <option value="10">10番ホール (INスタート)</option>
                     </select>
                 </div>
+                
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-                <div style="font-size: 0.9rem; color: #555; margin-bottom: 8px; font-weight: bold;">各ホールのパー数</div>
+                <div style="font-size: 0.9rem; color: #555; margin-bottom: 8px; font-weight: bold;">各ホールのパー数設定</div>
                 <div id="parInputContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div><span>H1:</span><select id="parHole1"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H2:</span><select id="parHole2"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H3:</span><select id="parHole3"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H4:</span><select id="parHole4"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H5:</span><select id="parHole5"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H6:</span><select id="parHole6"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H7:</span><select id="parHole7"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H8:</span><select id="parHole8"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H9:</span><select id="parHole9"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H10:</span><select id="parHole10"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H11:</span><select id="parHole11"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H12:</span><select id="parHole12"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H13:</span><select id="parHole13"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H14:</span><select id="parHole14"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H15:</span><select id="parHole15"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H16:</span><select id="parHole16"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H17:</span><select id="parHole17"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <div><span>H18:</span><select id="parHole18"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
                 </div>
                 
                 <button class="btn" onclick="startGame()">ラウンド開始</button>
@@ -264,25 +286,8 @@
     // 現在のキャリー状態 (そのホール開始時点でかかっている倍率)
     let currentCarryMultiplier = 1;
 
-    // 初期化処理：セレクトボックスの中身を作る
+    // 初期化処理：スコア選択肢の生成のみを行う
     window.onload = function() {
-        // スタートホールの選択肢 (1~18)
-        const startHoleSel = document.getElementById('startHoleInput');
-        for(let i=1; i<=18; i++) {
-            startHoleSel.options.add(new Option(i + '番ホール', i));
-        }
-        // 各ホールのパー数入力欄を生成
-        const parContainer = document.getElementById('parInputContainer');
-        for(let i=1; i<=18; i++) {
-            let div = document.createElement('div');
-            div.style.display = 'flex';
-            div.style.alignItems = 'center';
-            div.style.gap = '4px';
-            div.style.fontSize = '0.85rem';
-            div.innerHTML = `<span style="width:30px;">H${i}:</span><select id="parHole${i}" style="flex:1; padding: 5px; font-size: 0.9rem;"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select>`;
-            parContainer.appendChild(div);
-        }
-        // スコアの選択肢 (1~15)
         const scoreSelects = document.querySelectorAll('.score-select');
         scoreSelects.forEach(sel => {
             sel.options.add(new Option('選択', ''));
@@ -314,12 +319,12 @@
             sel.innerHTML = '';
             for(let i=0; i<4; i++) {
                 let opt = new Option(players[i], i);
-                if(i === index) opt.selected = true; // デフォルトでプレイヤー1,2,3,4の順
+                if(i === index) opt.selected = true; // デフォルトで入力された初期打順（0,1,2,3）
                 sel.options.add(opt);
             }
         });
 
-        // ホール順の生成 (例: 10スタートなら 10,11..18,1..9)
+        // ホール順の生成 (1スタートなら 1..18、10スタートなら 10..18,1..9)
         let sHole = parseInt(document.getElementById('startHoleInput').value);
         holeSequence = [];
         for(let i=0; i<HOLES; i++) {
@@ -328,7 +333,7 @@
             holeSequence.push(h);
         }
 
-        // 各ホールのパー数を取得
+        // 各ホールの規定パー数を固定取得
         initialPars = [];
         for(let i=1; i<=18; i++) {
             initialPars[i] = parseInt(document.getElementById(`parHole${i}`).value);
@@ -369,11 +374,11 @@
                 document.getElementById(`b${j}_score`).value = data.scores[j-1];
             }
         } else {
-            // 初期設定されたパー数を自動反映
+            // 初期設定画面で入力されたパー数を自動反映
             document.getElementById('currentPar').value = initialPars[actualHole];
 
             // オナー決めの自動ソートロジック
-            let currentOrder = [0, 1, 2, 3]; // 第1ホールのデフォルト順
+            let currentOrder = [0, 1, 2, 3]; // 基本設定で入力された「初期オナー〜4th」の並び
             if (currentStep > 0) {
                 let prevData = roundData[currentStep - 1];
                 currentOrder.sort((a, b) => {
@@ -461,91 +466,4 @@
         }
         document.getElementById('preview_pts').innerText = summaryText || '同点引分 (次回へキャリー)';
 
-        return { scoreA, scoreB, pts, b, s, par }; // 成功時データ返却
-    }
-
-    function resetPreviewDisplay() {
-        document.getElementById('preview_tA').innerText = '-';
-        document.getElementById('preview_tB').innerText = '-';
-        document.getElementById('preview_carry').innerText = currentCarryMultiplier + 'x';
-        document.getElementById('preview_pts').innerText = '-';
-    }
-
-    function getTeamScore(score1, score2, isReversed) {
-        let min = Math.min(score1, score2);
-        let max = Math.max(score1, score2);
-        return isReversed ? (max * 10 + min) : (min * 10 + max);
-    }
-
-    function goToNextHole() {
-        let result = calcPreview();
-        if(result === false) {
-            alert("打者が重複しています。修正してください。");
-            return;
-        }
-        if(result === true) {
-            alert("全員の打数を選択してください。");
-            return;
-        }
-
-        // データの保存
-        roundData[currentStep] = {
-            holeNum: holeSequence[currentStep],
-            par: result.par,
-            batters: result.b,
-            scores: result.s,
-            scoreA: result.scoreA,
-            scoreB: result.scoreB,
-            pts: result.pts,
-            usedCarry: currentCarryMultiplier
-        };
-
-        // 次のキャリーを計算
-        if (result.scoreA === result.scoreB) {
-            currentCarryMultiplier++;
-        } else {
-            currentCarryMultiplier = 1;
-        }
-
-        updateHeaderTotals();
-
-        currentStep++;
-        if (currentStep >= HOLES) {
-            switchView('resultView');
-        } else {
-            renderCurrentHole();
-        }
-    }
-
-    function goBack() {
-        if(currentStep > 0) {
-            currentStep--;
-            // キャリーの再計算 (最初から現在のステップの直前まで計算し直す)
-            recalcCarryUpToCurrent();
-            updateHeaderTotals();
-            renderCurrentHole();
-        }
-    }
-
-    function recalcCarryUpToCurrent() {
-        currentCarryMultiplier = 1;
-        for(let i=0; i<currentStep; i++) {
-            let data = roundData[i];
-            if(data.scoreA === data.scoreB) {
-                currentCarryMultiplier++;
-            } else {
-                currentCarryMultiplier = 1;
-            }
-        }
-    }
-
-    function updateHeaderTotals() {
-        let totals = [0, 0, 0, 0];
-        // 確定しているホール(0 から currentStep-1)までを集計
-        for(let i=0; i<currentStep; i++) {
-            for(let p=0; p<4; p++) {
-                totals[p] += roundData[i].pts[p];
-            }
-        }
-        
-   
+        return { scoreA, scoreB, pts, b, s, par 
