@@ -2,139 +2,154 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>ラスベガス集計アプリ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ラスベガス集計アプリ(スマホ版)</title>
 <style>
     body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        background-color: #f4f7f6;
+        background-color: #f0f2f5;
         color: #333;
         margin: 0;
-        padding: 20px;
+        padding: 0;
+        padding-bottom: 80px; /* フッター領域の確保 */
     }
-    h1 {
-        font-size: 1.5rem;
-        color: #2c3e50;
+    .sticky-header {
+        position: sticky;
+        top: 0;
+        background: #2c3e50;
+        color: white;
+        padding: 10px;
+        z-index: 1000;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
-    .panel {
-        background: #fff;
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-        overflow-x: auto;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 800px;
-    }
-    th, td {
-        border: 1px solid #ddd;
-        padding: 8px;
+    .totals-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 5px;
         text-align: center;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
     }
-    th {
-        background-color: #2c3e50;
-        color: #fff;
+    .totals-grid div {
+        background: rgba(255,255,255,0.1);
+        padding: 5px;
+        border-radius: 4px;
+    }
+    .totals-name { font-weight: bold; margin-bottom: 3px; font-size: 0.9rem;}
+    .totals-pt { font-size: 0.8rem; color: #f1c40f; }
+    
+    .container {
+        padding: 15px;
+    }
+    .card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 15px;
+        padding: 15px;
+    }
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        border-bottom: 2px solid #ecf0f1;
+        padding-bottom: 5px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .input-group {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    .input-group label {
+        flex: 0 0 60px;
+        font-size: 0.9rem;
+        color: #555;
+    }
+    select, input[type="text"], input[type="number"] {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 1rem;
+        box-sizing: border-box;
     }
     input[type="number"] {
-        width: 40px;
-        padding: 4px;
+        max-width: 80px;
         text-align: right;
     }
-    select {
-        padding: 4px;
+    .score-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 8px;
+        align-items: center;
+    }
+    .score-row select {
+        flex: 1;
+    }
+    .score-row input {
+        width: 70px;
+        flex: none;
+    }
+    .hole-result {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
+        font-size: 0.85rem;
+    }
+    .result-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
     }
     .btn {
         background-color: #27ae60;
         color: white;
         border: none;
-        padding: 10px 20px;
+        padding: 12px;
         font-size: 1rem;
         border-radius: 5px;
         cursor: pointer;
-    }
-    .btn:hover {
-        background-color: #2ecc71;
-    }
-    .totals {
+        width: 100%;
         font-weight: bold;
-        background-color: #e8f8f5;
+        text-align: center;
+        display: block;
+        margin-top: 10px;
     }
-    .player-setup {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 10px;
-    }
-    .player-setup input {
-        width: 100px;
-        padding: 5px;
-    }
+    .btn:active { background-color: #219653; }
+    .btn-secondary { background-color: #34495e; }
 </style>
 </head>
 <body>
 
-    <h1>ラスベガス集計アプリ</h1>
-
-    <div class="panel">
-        <h3>プレイヤー設定</h3>
-        <div class="player-setup">
-            <label>Aさん: <input type="text" id="nameA" value="Aさん"></label>
-            <label>Bさん: <input type="text" id="nameB" value="Bさん"></label>
-            <label>Cさん: <input type="text" id="nameC" value="Cさん"></label>
-            <label>Dさん: <input type="text" id="nameD" value="Dさん"></label>
-            <button class="btn" onclick="initializeTable()">設定を反映して開始</button>
+    <div class="sticky-header">
+        <div style="font-size: 0.8rem; text-align: center; margin-bottom: 5px;">現在までの合計収支 (1pt=50円)</div>
+        <div class="totals-grid">
+            <div><div class="totals-name" id="h-name0">A</div><div id="h-total0">0</div><div class="totals-pt" id="h-yen0">¥0</div></div>
+            <div><div class="totals-name" id="h-name1">B</div><div id="h-total1">0</div><div class="totals-pt" id="h-yen1">¥0</div></div>
+            <div><div class="totals-name" id="h-name2">C</div><div id="h-total2">0</div><div class="totals-pt" id="h-yen2">¥0</div></div>
+            <div><div class="totals-name" id="h-name3">D</div><div id="h-total3">0</div><div class="totals-pt" id="h-yen3">¥0</div></div>
         </div>
-        <p style="font-size: 0.8rem; color: #666;">※1点50円 / 点差上限20 / 打順1&4 vs 2&3</p>
     </div>
 
-    <div class="panel">
-        <table id="scoreTable">
-            <thead>
-                <tr>
-                    <th rowspan="2">Hole</th>
-                    <th rowspan="2">Par</th>
-                    <th colspan="2">1番打者</th>
-                    <th colspan="2">2番打者</th>
-                    <th colspan="2">3番打者</th>
-                    <th colspan="2">4番打者</th>
-                    <th colspan="2">チーム得点</th>
-                    <th rowspan="2">倍率<br>(ｷｬﾘｰ)</th>
-                    <th colspan="4">個人収支 (ポイント)</th>
-                </tr>
-                <tr>
-                    <th>名前</th><th>打数</th>
-                    <th>名前</th><th>打数</th>
-                    <th>名前</th><th>打数</th>
-                    <th>名前</th><th>打数</th>
-                    <th>1&4</th><th>2&3</th>
-                    <th id="th-p0">A</th><th id="th-p1">B</th><th id="th-p2">C</th><th id="th-p3">D</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody">
-                <!-- JavaScriptで生成 -->
-            </tbody>
-            <tfoot>
-                <tr class="totals">
-                    <td colspan="13" style="text-align: right;">合計ポイント:</td>
-                    <td id="total-p0">0</td>
-                    <td id="total-p1">0</td>
-                    <td id="total-p2">0</td>
-                    <td id="total-p3">0</td>
-                </tr>
-                <tr class="totals">
-                    <td colspan="13" style="text-align: right;">合計金額 (1pt=50円):</td>
-                    <td id="yen-p0">¥0</td>
-                    <td id="yen-p1">¥0</td>
-                    <td id="yen-p2">¥0</td>
-                    <td id="yen-p3">¥0</td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
+    <div class="container">
+        <div class="card">
+            <div class="card-title">プレイヤー設定</div>
+            <div class="input-group"><label>Aさん</label><input type="text" id="nameA" value="Aさん"></div>
+            <div class="input-group"><label>Bさん</label><input type="text" id="nameB" value="Bさん"></div>
+            <div class="input-group"><label>Cさん</label><input type="text" id="nameC" value="Cさん"></div>
+            <div class="input-group"><label>Dさん</label><input type="text" id="nameD" value="Dさん"></div>
+            <button class="btn" onclick="initializeHoles()">設定を反映</button>
+            <p style="font-size: 0.75rem; color: #666; margin-top:10px; text-align:center;">※1&4番 vs 2&3番 / 点差上限20 / 同点キャリー</p>
+        </div>
 
-    <button class="btn" onclick="downloadCSV()">集計詳細をCSVダウンロード</button>
+        <div id="holesContainer">
+            </div>
+
+        <button class="btn btn-secondary" onclick="downloadCSV()">集計詳細をCSVダウンロード</button>
+    </div>
 
 <script>
     const HOLES = 18;
@@ -142,7 +157,7 @@
     const MAX_DIFF = 20;
     let players = [];
 
-    function initializeTable() {
+    function initializeHoles() {
         players = [
             document.getElementById('nameA').value || 'A',
             document.getElementById('nameB').value || 'B',
@@ -151,40 +166,56 @@
         ];
 
         for(let i=0; i<4; i++) {
-            document.getElementById(`th-p${i}`).innerText = players[i];
+            document.getElementById(`h-name${i}`).innerText = players[i].substring(0,4); // ヘッダーは文字数制限
         }
 
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
+        const container = document.getElementById('holesContainer');
+        container.innerHTML = '';
 
         for (let i = 1; i <= HOLES; i++) {
-            let tr = document.createElement('tr');
+            let card = document.createElement('div');
+            card.className = 'card';
             
-            let html = `<td>${i}</td>
-                        <td><input type="number" id="par_${i}" value="4" min="3" max="5" onchange="calculateAll()"></td>`;
+            let html = `
+                <div class="card-title">
+                    <span>Hole ${i}</span>
+                    <span style="font-size: 0.9rem; font-weight: normal;">Par <input type="number" id="par_${i}" value="4" min="3" max="5" oninput="calculateAll()" inputmode="numeric" style="width:50px;"></span>
+                </div>
+            `;
             
             for (let j = 1; j <= 4; j++) {
-                html += `<td>
-                            <select id="batter${j}_${i}" onchange="calculateAll()">
-                                <option value="0">${players[0]}</option>
-                                <option value="1" ${j===2?'selected':''}>${players[1]}</option>
-                                <option value="2" ${j===3?'selected':''}>${players[2]}</option>
-                                <option value="3" ${j===4?'selected':''}>${players[3]}</option>
-                            </select>
-                         </td>
-                         <td><input type="number" id="score${j}_${i}" min="1" onchange="calculateAll()"></td>`;
+                html += `
+                    <div class="score-row">
+                        <span style="font-size:0.8rem; color:#7f8c8d; width:25px;">${j}打</span>
+                        <select id="batter${j}_${i}" onchange="calculateAll()">
+                            <option value="0">${players[0]}</option>
+                            <option value="1" ${j===2?'selected':''}>${players[1]}</option>
+                            <option value="2" ${j===3?'selected':''}>${players[2]}</option>
+                            <option value="3" ${j===4?'selected':''}>${players[3]}</option>
+                        </select>
+                        <input type="number" id="score${j}_${i}" min="1" placeholder="打数" oninput="calculateAll()" inputmode="numeric">
+                    </div>
+                `;
             }
             
-            html += `<td id="tA_${i}">-</td>
-                     <td id="tB_${i}">-</td>
-                     <td id="carry_${i}">1x</td>
-                     <td id="pt0_${i}">0</td>
-                     <td id="pt1_${i}">0</td>
-                     <td id="pt2_${i}">0</td>
-                     <td id="pt3_${i}">0</td>`;
+            html += `
+                <div class="hole-result">
+                    <div class="result-row">
+                        <span>チーム(1&4)得点: <strong id="tA_${i}">-</strong></span>
+                        <span>チーム(2&3)得点: <strong id="tB_${i}">-</strong></span>
+                    </div>
+                    <div class="result-row">
+                        <span style="color:#e74c3c;">キャリー: <strong id="carry_${i}">1x</strong></span>
+                    </div>
+                    <div class="result-row" style="font-size: 0.8rem; margin-top: 5px; color:#555;">
+                        <span>ポイント移動:</span>
+                        <span id="pt_summary_${i}">-</span>
+                    </div>
+                </div>
+            `;
                      
-            tr.innerHTML = html;
-            tbody.appendChild(tr);
+            card.innerHTML = html;
+            container.appendChild(card);
         }
         calculateAll();
     }
@@ -193,9 +224,9 @@
         let min = Math.min(score1, score2);
         let max = Math.max(score1, score2);
         if (isReversed) {
-            return max * 10 + min; // 大きい数字が10の位
+            return max * 10 + min;
         } else {
-            return min * 10 + max; // 小さい数字が10の位
+            return min * 10 + max;
         }
     }
 
@@ -205,60 +236,56 @@
 
         for (let i = 1; i <= HOLES; i++) {
             let par = parseInt(document.getElementById(`par_${i}`).value) || 4;
-            
-            let b1_id = parseInt(document.getElementById(`batter1_${i}`).value);
-            let b1_s = parseInt(document.getElementById(`score1_${i}`).value);
-            let b2_id = parseInt(document.getElementById(`batter2_${i}`).value);
-            let b2_s = parseInt(document.getElementById(`score2_${i}`).value);
-            let b3_id = parseInt(document.getElementById(`batter3_${i}`).value);
-            let b3_s = parseInt(document.getElementById(`score3_${i}`).value);
-            let b4_id = parseInt(document.getElementById(`batter4_${i}`).value);
-            let b4_s = parseInt(document.getElementById(`score4_${i}`).value);
+            let b = [], s = [];
+            let isComplete = true;
 
-            // スコアが未入力の場合は計算をスキップ
-            if (isNaN(b1_s) || isNaN(b2_s) || isNaN(b3_s) || isNaN(b4_s)) {
+            for(let j=1; j<=4; j++) {
+                b[j] = parseInt(document.getElementById(`batter${j}_${i}`).value);
+                s[j] = parseInt(document.getElementById(`score${j}_${i}`).value);
+                if (isNaN(s[j])) isComplete = false;
+            }
+
+            if (!isComplete) {
                 document.getElementById(`carry_${i}`).innerText = carryMultiplier + 'x';
+                document.getElementById(`tA_${i}`).innerText = '-';
+                document.getElementById(`tB_${i}`).innerText = '-';
+                document.getElementById(`pt_summary_${i}`).innerText = '未入力';
                 continue;
             }
 
-            // チーム分け: チームA(打順1,4), チームB(打順2,3)
-            let teamA_birdie = (b1_s <= par - 1) || (b4_s <= par - 1);
-            let teamB_birdie = (b2_s <= par - 1) || (b3_s <= par - 1);
+            let teamA_birdie = (s[1] <= par - 1) || (s[4] <= par - 1);
+            let teamB_birdie = (s[2] <= par - 1) || (s[3] <= par - 1);
 
-            let scoreA = getTeamScore(b1_s, b4_s, teamB_birdie); // BがバーディーならAが逆転
-            let scoreB = getTeamScore(b2_s, b3_s, teamA_birdie); // AがバーディーならBが逆転
+            let scoreA = getTeamScore(s[1], s[4], teamB_birdie);
+            let scoreB = getTeamScore(s[2], s[3], teamA_birdie);
 
             document.getElementById(`tA_${i}`).innerText = scoreA;
             document.getElementById(`tB_${i}`).innerText = scoreB;
             document.getElementById(`carry_${i}`).innerText = carryMultiplier + 'x';
 
             let diff = Math.abs(scoreA - scoreB);
-            let cappedDiff = Math.min(diff, MAX_DIFF); // 最大点差20キャップ
+            let cappedDiff = Math.min(diff, MAX_DIFF);
             let pointsMoved = cappedDiff * carryMultiplier;
-
             let pts = [0, 0, 0, 0];
 
             if (scoreA < scoreB) {
-                // チームA勝利
-                pts[b1_id] += pointsMoved;
-                pts[b4_id] += pointsMoved;
-                pts[b2_id] -= pointsMoved;
-                pts[b3_id] -= pointsMoved;
+                pts[b[1]] += pointsMoved; pts[b[4]] += pointsMoved;
+                pts[b[2]] -= pointsMoved; pts[b[3]] -= pointsMoved;
             } else if (scoreB < scoreA) {
-                // チームB勝利
-                pts[b1_id] -= pointsMoved;
-                pts[b4_id] -= pointsMoved;
-                pts[b2_id] += pointsMoved;
-                pts[b3_id] += pointsMoved;
+                pts[b[1]] -= pointsMoved; pts[b[4]] -= pointsMoved;
+                pts[b[2]] += pointsMoved; pts[b[3]] += pointsMoved;
             }
 
-            // ポイント反映
-            for (let p = 0; p < 4; p++) {
-                document.getElementById(`pt${p}_${i}`).innerText = pts[p] > 0 ? '+' + pts[p] : pts[p];
+            // ホール結果のサマリー表示
+            let summaryText = "";
+            for(let p=0; p<4; p++) {
                 totals[p] += pts[p];
+                if(pts[p] !== 0) {
+                    summaryText += `${players[p]}:${pts[p]>0?'+':''}${pts[p]} `;
+                }
             }
+            document.getElementById(`pt_summary_${i}`).innerText = summaryText || '同点引分';
 
-            // キャリー計算
             if (scoreA === scoreB) {
                 carryMultiplier++;
             } else {
@@ -266,43 +293,59 @@
             }
         }
 
-        // 合計の更新
+        // ヘッダー合計の更新
         for (let p = 0; p < 4; p++) {
-            document.getElementById(`total-p${p}`).innerText = totals[p];
-            document.getElementById(`yen-p${p}`).innerText = '¥' + (totals[p] * RATE).toLocaleString();
+            document.getElementById(`h-total${p}`).innerText = totals[p] > 0 ? '+' + totals[p] : totals[p];
+            document.getElementById(`h-yen${p}`).innerText = '¥' + (totals[p] * RATE).toLocaleString();
         }
     }
 
     function downloadCSV() {
-        let csv = '\uFEFF'; // BOM for Excel
-        const table = document.getElementById('scoreTable');
-        for (let i = 0; i < table.rows.length; i++) {
-            let row = [], cols = table.rows[i].cells;
-            for (let j = 0; j < cols.length; j++) {
-                let cellData = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "");
-                // インプット要素やセレクト要素があればその値を取得
-                if (cols[j].querySelector('input')) {
-                    cellData = cols[j].querySelector('input').value;
-                } else if (cols[j].querySelector('select')) {
-                    let select = cols[j].querySelector('select');
-                    cellData = select.options[select.selectedIndex].text;
-                }
-                row.push('"' + cellData + '"');
+        let csv = '\uFEFF'; 
+        // ヘッダー行作成
+        let header = ['Hole', 'Par', '1番打者', '1番スコア', '2番打者', '2番スコア', '3番打者', '3番スコア', '4番打者', '4番スコア', 'T(1&4)得点', 'T(2&3)得点', '倍率'];
+        for(let p=0; p<4; p++) header.push(players[p] + ' Pt');
+        csv += header.join(',') + '\n';
+
+        // データを集計から再構築して出力（DOM依存を減らし確実なデータ抽出を行う）
+        let carryMultiplier = 1;
+        for (let i = 1; i <= HOLES; i++) {
+            let row = [i];
+            let par = document.getElementById(`par_${i}`).value;
+            row.push(par);
+
+            let b = [], s = [], isComplete = true;
+            for(let j=1; j<=4; j++) {
+                let select = document.getElementById(`batter${j}_${i}`);
+                let pName = select.options[select.selectedIndex].text;
+                let score = parseInt(document.getElementById(`score${j}_${i}`).value);
+                b[j] = parseInt(select.value);
+                s[j] = score;
+                if(isNaN(score)) isComplete = false;
+                row.push('"' + pName + '"', isNaN(score) ? "" : score);
             }
-            csv += row.join(',') + '\n';
-        }
 
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.setAttribute('download', 'lasvegas_result.csv');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
+            if (!isComplete) {
+                row.push('','',''); // 得点・倍率を空欄
+                row.push('','','',''); // 各人のポイントを空欄
+                csv += row.join(',') + '\n';
+                continue;
+            }
 
-    // 初期化実行
-    window.onload = initializeTable;
-</script>
-</body>
-</html>
+            let tA_birdie = (s[1] <= par - 1) || (s[4] <= par - 1);
+            let tB_birdie = (s[2] <= par - 1) || (s[3] <= par - 1);
+            let scoreA = getTeamScore(s[1], s[4], tB_birdie);
+            let scoreB = getTeamScore(s[2], s[3], tA_birdie);
+
+            row.push(scoreA, scoreB, carryMultiplier);
+
+            let diff = Math.min(Math.abs(scoreA - scoreB), MAX_DIFF);
+            let pMove = diff * carryMultiplier;
+            let pts = [0,0,0,0];
+
+            if (scoreA < scoreB) {
+                pts[b[1]] += pMove; pts[b[4]] += pMove;
+                pts[b[2]] -= pMove; pts[b[3]] -= pMove;
+            } else if (scoreB < scoreA) {
+                pts[b[1]] -= pMove; pts[b[4]] -= pMove;
+                pts[b[2]] += pMove; pts[b[3]] += pMove;
