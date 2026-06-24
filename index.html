@@ -13,7 +13,7 @@
         margin: 0;
         padding: 0;
     }
-    .view-section { display: none; padding-bottom: 80px; }
+    .view-section { display: none; padding-bottom: 20px; }
     .view-section.active { display: block; }
     
     .sticky-header {
@@ -40,13 +40,13 @@
     .totals-name { font-weight: bold; margin-bottom: 3px; font-size: 0.9rem;}
     .totals-pt { font-size: 0.8rem; color: #f1c40f; }
     
-    .container { padding: 15px; max-width: 500px; margin: 0 auto; }
+    .container { padding: 10px 15px; max-width: 500px; margin: 0 auto; }
     
     .card {
         background: #fff;
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        margin-bottom: 15px;
+        margin-bottom: 10px;
         padding: 15px;
     }
     .card-title {
@@ -135,7 +135,7 @@
     .btn:active { background-color: #219653; }
     .btn-secondary { background-color: #7f8c8d; margin-top: 15px;}
     .btn-secondary:active { background-color: #636e72; }
-    .btn-info { background-color: #2980b9; }
+    .btn-info { background-color: #2980b9; padding: 12px; font-size: 1rem; }
 
     .error-msg {
         color: #e74c3c;
@@ -146,19 +146,22 @@
         display: none;
     }
 
+    /* ▼結果テーブルを極限までコンパクトにするCSS調整▼ */
     .result-table {
         width: 100%;
         border-collapse: collapse;
         text-align: center;
-        font-size: 0.85rem;
+        font-size: 0.75rem; /* 全体を小さく */
     }
     .result-table th, .result-table td {
         border: 1px solid #ddd;
-        padding: 6px 4px;
+        padding: 1px 1px; /* 余白を極小に */
+        line-height: 1.05; /* 行間を詰める */
     }
     .result-table th {
         background-color: #2c3e50;
         color: white;
+        padding: 3px 1px;
     }
     .result-table tr:nth-child(even) {
         background-color: #f9f9f9;
@@ -169,15 +172,15 @@
 
     <div id="setupView" class="view-section active">
         <div class="container">
-            <div class="card" style="margin-top: 10px;">
+            <div class="card" style="margin-top: 5px;">
                 <div class="card-title">基本設定</div>
                 <div class="input-group"><label>オナー</label><input type="text" id="nameA" value="プレイヤー1"></div>
                 <div class="input-group"><label>2nd</label><input type="text" id="nameB" value="プレイヤー2"></div>
                 <div class="input-group"><label>3rd</label><input type="text" id="nameC" value="プレイヤー3"></div>
                 <div class="input-group"><label>4th</label><input type="text" id="nameD" value="プレイヤー4"></div>
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
                 
-                <div class="input-group">
+                <div class="input-group" style="margin-bottom: 8px;">
                     <label>開始ホール</label>
                     <select id="startHoleInput">
                         <option value="1">1番ホール (OUTスタート)</option>
@@ -185,9 +188,9 @@
                     </select>
                 </div>
                 
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-                <div style="font-size: 0.9rem; color: #555; margin-bottom: 8px; font-weight: bold;">各ホールのパー数設定</div>
-                <div id="parInputContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+                <div style="font-size: 0.85rem; color: #555; margin-bottom: 5px; font-weight: bold;">各ホールのパー数設定</div>
+                <div id="parInputContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px;">
                     <div><span>H1:</span><select id="parHole1"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
                     <div><span>H2:</span><select id="parHole2"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
                     <div><span>H3:</span><select id="parHole3"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
@@ -279,13 +282,12 @@
     </div>
 
     <div id="resultView" class="view-section">
-        <div class="container">
-            <div class="card" id="captureArea" style="padding: 10px; background: white; border-radius: 8px;">
-                <div class="card-title" style="margin-bottom: 10px; font-size: 1.2rem;">ラウンド最終結果</div>
+        <div class="container" style="padding-top: 5px;">
+            <div class="card" id="captureArea" style="padding: 5px 8px; background: white; border-radius: 8px; margin-bottom: 5px;">
+                <div class="card-title" style="margin-bottom: 3px; padding-bottom: 3px; font-size: 1rem;">ラウンド最終結果</div>
                 <div id="resultTableContainer"></div>
             </div>
-            <p style="text-align: center; margin-top: 15px; font-size: 0.9rem; color: #555;">全18ホールの集計が完了しました。</p>
-            <button class="btn btn-info" id="downloadBtn" style="margin-top: 10px;">結果をPNG画像でダウンロード</button>
+            <button class="btn btn-info" id="downloadBtn" style="margin-top: 8px;">結果をPNG画像でダウンロード</button>
         </div>
     </div>
 
@@ -302,9 +304,7 @@
     let roundData = []; 
     let currentCarryMultiplier = 1;
 
-    // 待機イベント（DOMContentLoaded）を廃止し、即座に初期化関数を実行
     (function initApp() {
-        // スコア選択肢の生成（空の選択肢を削除し1〜15を生成）
         const scoreSelects = document.querySelectorAll('.score-select');
         scoreSelects.forEach(sel => {
             sel.innerHTML = '';
@@ -316,13 +316,11 @@
             }
         });
 
-        // ボタンイベントの確実な登録
         document.getElementById('startBtn').addEventListener('click', startGame);
         document.getElementById('nextBtn').addEventListener('click', goToNextHole);
         document.getElementById('backBtn').addEventListener('click', goBack);
         document.getElementById('downloadBtn').addEventListener('click', downloadPNG);
 
-        // リアルタイム計算用のイベント登録
         const changeTriggers = [
             'currentPar', 'b1_player', 'b1_score', 'b2_player', 'b2_score', 
             'b3_player', 'b3_score', 'b4_player', 'b4_score'
@@ -456,7 +454,7 @@
         let calcVegas = (scores, reverse) => {
             let min = Math.min(...scores);
             let max = Math.max(...scores);
-            return reverse ? parseInt(String(max) + String(min), 10) : parseInt(String(min) + String(max), 10);
+            return reverse ? (max * 10 + min) : (min * 10 + max);
         };
 
         let tX_reverse = tY_birdie && !tX_birdie;
@@ -569,7 +567,7 @@
         
         let container = document.getElementById('resultTableContainer');
         let html = '<table class="result-table">';
-        html += '<tr><th>Hole</th><th>Par</th>';
+        html += '<tr><th style="width:12%">Hole</th><th style="width:12%">Par</th>';
         for(let i=0; i<4; i++) html += `<th>${players[i].substring(0,4)}</th>`;
         html += '</tr>';
         
@@ -578,6 +576,7 @@
         for(let i=0; i<HOLES; i++) {
             let d = roundData[i];
             let hNum = holeSequence[i];
+            // ▼ 行の余白を極小にし、文字を詰める ▼
             html += `<tr><td>${hNum}</td><td>${d.par}</td>`;
             for(let p=0; p<4; p++) {
                 let bIndex = d.batters.indexOf(p);
@@ -585,16 +584,17 @@
                 let move = d.move[p];
                 let moveStr = move > 0 ? `+${move}` : (move === 0 ? '±0' : String(move));
                 let color = move > 0 ? '#c0392b' : (move < 0 ? '#2980b9' : '#7f8c8d');
-                html += `<td><span style="font-size:1.1rem;font-weight:bold;">${score}</span><br><span style="font-size:0.75rem;color:${color};">${moveStr}</span></td>`;
+                html += `<td><span style="font-size:0.85rem;font-weight:bold;">${score}</span><br><span style="font-size:0.65rem;color:${color};">${moveStr}</span></td>`;
                 totals[p] += move;
             }
             html += '</tr>';
         }
         
-        html += '<tr style="background-color: #ecf0f1; font-weight: bold; border-top: 2px solid #bdc3c7;"><td>合計</td><td>-</td>';
+        // ▼ 合計行もコンパクトに ▼
+        html += '<tr style="background-color: #ecf0f1; font-weight: bold; border-top: 2px solid #bdc3c7;"><td>計</td><td>-</td>';
         for(let i=0; i<4; i++) {
             let color = totals[i] > 0 ? '#c0392b' : (totals[i] < 0 ? '#2980b9' : '#333');
-            html += `<td>Pt: <span style="color:${color}">${totals[i]}</span><br>¥${totals[i] * RATE}</td>`;
+            html += `<td style="padding: 4px 1px;"><span style="color:${color}">${totals[i]}</span><br><span style="font-size:0.6rem; font-weight:normal;">¥${totals[i] * RATE}</span></td>`;
         }
         html += '</tr></table>';
         
