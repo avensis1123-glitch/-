@@ -302,8 +302,9 @@
     let roundData = []; 
     let currentCarryMultiplier = 1;
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // デフォルトを4にするため、空の選択肢を削除し1〜15を生成
+    // 待機イベント（DOMContentLoaded）を廃止し、即座に初期化関数を実行
+    (function initApp() {
+        // スコア選択肢の生成（空の選択肢を削除し1〜15を生成）
         const scoreSelects = document.querySelectorAll('.score-select');
         scoreSelects.forEach(sel => {
             sel.innerHTML = '';
@@ -315,11 +316,13 @@
             }
         });
 
+        // ボタンイベントの確実な登録
         document.getElementById('startBtn').addEventListener('click', startGame);
         document.getElementById('nextBtn').addEventListener('click', goToNextHole);
         document.getElementById('backBtn').addEventListener('click', goBack);
         document.getElementById('downloadBtn').addEventListener('click', downloadPNG);
 
+        // リアルタイム計算用のイベント登録
         const changeTriggers = [
             'currentPar', 'b1_player', 'b1_score', 'b2_player', 'b2_score', 
             'b3_player', 'b3_score', 'b4_player', 'b4_score'
@@ -328,7 +331,7 @@
             let el = document.getElementById(id);
             if(el) el.addEventListener('change', calcPreview);
         });
-    });
+    })();
 
     function startGame() {
         players = [
@@ -394,7 +397,6 @@
         document.getElementById('nextBtn').textContent = (currentStep === 17) ? '結果を保存して終了する' : '結果を保存して次へ進む';
 
         if (roundData[currentStep]) {
-            // 既に入力済みのホールに戻ってきた場合の復元
             let data = roundData[currentStep];
             document.getElementById('currentPar').value = String(data.par);
             for(let j=1; j<=4; j++) {
@@ -402,12 +404,10 @@
                 document.getElementById(`b${j}_score`).value = String(data.scores[j-1]);
             }
         } else {
-            // 新しいホール
             document.getElementById('currentPar').value = String(initialPars[String(actualHole)] || "4");
 
             let currentOrder = [0, 1, 2, 3]; 
             if (currentStep > 0) {
-                // ここで直前のホール（currentStep - 1）の成績に基づいて打順を決定（即時反映）
                 let prevData = roundData[currentStep - 1];
                 currentOrder.sort((a, b) => {
                     let idxA = prevData.batters.indexOf(a);
@@ -421,7 +421,7 @@
 
             for(let j=1; j<=4; j++) {
                 document.getElementById(`b${j}_player`).value = String(currentOrder[j-1]);
-                document.getElementById(`b${j}_score`).value = '4'; // デフォルトを4打に設定
+                document.getElementById(`b${j}_score`).value = '4';
             }
         }
 
@@ -447,8 +447,6 @@
             document.getElementById('errorMsg').style.display = 'none';
         }
 
-        // チームX(オナーと4th): b[0], b[3]
-        // チームY(2ndと3rd): b[1], b[2]
         let tX_scores = [s[0], s[3]];
         let tY_scores = [s[1], s[2]];
 
@@ -461,8 +459,157 @@
             return reverse ? parseInt(String(max) + String(min), 10) : parseInt(String(min) + String(max), 10);
         };
 
-        // 相手チームにのみバーディ（以下）がいれば点数反転
         let tX_reverse = tY_birdie && !tX_birdie;
         let tY_reverse = tX_birdie && !tY_birdie;
 
         let tX_val = calcVegas(tX_scores, tX_reverse);
+        let tY_val = calcVegas(tY_scores, tY_reverse);
+
+        document.getElementById('preview_tA').textContent = tX_val;
+        document.getElementById('preview_tB').textContent = tY_val;
+
+        let diff = Math.abs(tX_val - tY_val);
+        if(diff > MAX_DIFF) diff = MAX_DIFF;
+
+        let pts = diff * currentCarryMultiplier;
+        let isTie = (tX_val === tY_val);
+
+        document.getElementById('preview_carry').textContent = currentCarryMultiplier + 'x';
+        document.getElementById('preview_pts').textContent = pts;
+
+        let move = [0, 0, 0, 0];
+        if (!isTie) {
+            if (tX_val < tY_val) {
+                move[b[0]] = pts; move[b[3]] = pts;
+                move[b[1]] = -pts; move[b[2]] = -pts;
+            } else {
+                move[b[0]] = -pts; move[b[3]] = -pts;
+                move[b[1]] = pts; move[b[2]] = pts;
+            }
+        }
+
+        return {
+            par: par,
+            batters: b,
+            scores: s,
+            tX_val: tX_val,
+            tY_val: tY_val,
+            pts: pts,
+            move: move,
+            isTie: isTie
+        };
+    }
+
+    function resetPreviewDisplay() {
+        document.getElementById('preview_tA').textContent = '-';
+        document.getElementById('preview_tB').textContent = '-';
+        document.getElementById('preview_pts').textContent = '-';
+    }
+
+    function goToNextHole() {
+        let result = calcPreview();
+        if(!result) return; 
+
+        roundData[currentStep] = result;
+
+        if (result.isTie) {
+            currentCarryMultiplier++;
+        } else {
+            currentCarryMultiplier = 1;
+        }
+
+        updateHeaderTotals();
+
+        currentStep++;
+        if(currentStep >= HOLES) {
+            showResultView();
+        } else {
+            renderCurrentHole();
+            window.scrollTo(0, 0);
+        }
+    }
+
+    function goBack() {
+        if(currentStep > 0) {
+            currentStep--;
+            let totals = [0, 0, 0, 0];
+            currentCarryMultiplier = 1;
+            
+            for(let i=0; i<currentStep; i++) {
+                let data = roundData[i];
+                for(let p=0; p<4; p++) totals[p] += data.move[p];
+                if(data.isTie) currentCarryMultiplier++;
+                else currentCarryMultiplier = 1;
+            }
+            
+            for(let i=0; i<4; i++) {
+                document.getElementById(`h-total${i}`).textContent = totals[i];
+                document.getElementById(`h-yen${i}`).textContent = '¥' + (totals[i] * RATE);
+            }
+            
+            renderCurrentHole();
+        }
+    }
+
+    function updateHeaderTotals() {
+        let totals = [0, 0, 0, 0];
+        for(let i=0; i<=currentStep; i++) {
+            if(roundData[i]) {
+                for(let p=0; p<4; p++) totals[p] += roundData[i].move[p];
+            }
+        }
+        for(let i=0; i<4; i++) {
+            document.getElementById(`h-total${i}`).textContent = totals[i];
+            document.getElementById(`h-yen${i}`).textContent = '¥' + (totals[i] * RATE);
+        }
+    }
+
+    function showResultView() {
+        switchView('resultView');
+        
+        let container = document.getElementById('resultTableContainer');
+        let html = '<table class="result-table">';
+        html += '<tr><th>Hole</th><th>Par</th>';
+        for(let i=0; i<4; i++) html += `<th>${players[i].substring(0,4)}</th>`;
+        html += '</tr>';
+        
+        let totals = [0, 0, 0, 0];
+        
+        for(let i=0; i<HOLES; i++) {
+            let d = roundData[i];
+            let hNum = holeSequence[i];
+            html += `<tr><td>${hNum}</td><td>${d.par}</td>`;
+            for(let p=0; p<4; p++) {
+                let bIndex = d.batters.indexOf(p);
+                let score = d.scores[bIndex];
+                let move = d.move[p];
+                let moveStr = move > 0 ? `+${move}` : (move === 0 ? '±0' : String(move));
+                let color = move > 0 ? '#c0392b' : (move < 0 ? '#2980b9' : '#7f8c8d');
+                html += `<td><span style="font-size:1.1rem;font-weight:bold;">${score}</span><br><span style="font-size:0.75rem;color:${color};">${moveStr}</span></td>`;
+                totals[p] += move;
+            }
+            html += '</tr>';
+        }
+        
+        html += '<tr style="background-color: #ecf0f1; font-weight: bold; border-top: 2px solid #bdc3c7;"><td>合計</td><td>-</td>';
+        for(let i=0; i<4; i++) {
+            let color = totals[i] > 0 ? '#c0392b' : (totals[i] < 0 ? '#2980b9' : '#333');
+            html += `<td>Pt: <span style="color:${color}">${totals[i]}</span><br>¥${totals[i] * RATE}</td>`;
+        }
+        html += '</tr></table>';
+        
+        container.innerHTML = html;
+    }
+
+    function downloadPNG() {
+        let target = document.getElementById('captureArea');
+        html2canvas(target, { scale: 2 }).then(canvas => {
+            let link = document.createElement('a');
+            link.download = 'lasvegas_result.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    }
+</script>
+</body>
+</html>
