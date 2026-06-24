@@ -8,10 +8,11 @@
 <style>
     body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        background-color: #f0f2f5;
-        color: #333;
+        background: radial-gradient(circle at top, #2b1055 0%, #0b0115 100%);
+        color: #eee;
         margin: 0;
         padding: 0;
+        min-height: 100vh;
     }
     .view-section { display: none; padding-bottom: 20px; }
     .view-section.active { display: block; }
@@ -19,11 +20,12 @@
     .sticky-header {
         position: sticky;
         top: 0;
-        background: #2c3e50;
-        color: white;
+        background: linear-gradient(to bottom, #d4af37, #9b7000);
+        color: #111;
         padding: 10px;
         z-index: 1000;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        box-shadow: 0 2px 10px rgba(255,215,0,0.4);
+        border-bottom: 2px solid #fff;
     }
     .totals-grid {
         display: grid;
@@ -33,31 +35,36 @@
         font-size: 0.85rem;
     }
     .totals-grid div {
-        background: rgba(255,255,255,0.1);
+        background: rgba(0,0,0,0.6);
         padding: 5px;
         border-radius: 4px;
+        border: 1px solid rgba(255,215,0,0.6);
+        color: #fff;
     }
-    .totals-name { font-weight: bold; margin-bottom: 3px; font-size: 0.9rem;}
-    .totals-pt { font-size: 0.8rem; color: #f1c40f; }
+    .totals-name { font-weight: bold; margin-bottom: 3px; font-size: 0.9rem; text-shadow: 0 0 3px #fff;}
+    .totals-pt { font-size: 0.85rem; color: #ffd700; text-shadow: 0 0 5px #ffd700; font-weight: bold;}
     
     .container { padding: 10px 15px; max-width: 500px; margin: 0 auto; }
     
     .card {
-        background: #fff;
+        background: rgba(20, 10, 40, 0.85);
         border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        box-shadow: 0 0 15px rgba(249,0,255,0.3);
+        border: 1px solid #ff007f;
         margin-bottom: 10px;
         padding: 15px;
     }
     .card-title {
         font-size: 1.1rem;
         font-weight: bold;
-        border-bottom: 2px solid #ecf0f1;
+        border-bottom: 2px solid #333;
         padding-bottom: 8px;
         margin-bottom: 15px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        color: #00e5ff;
+        text-shadow: 0 0 5px #00e5ff;
     }
     .input-group {
         display: flex;
@@ -67,15 +74,21 @@
     .input-group label {
         flex: 0 0 90px;
         font-size: 0.9rem;
-        color: #555;
+        color: #ccc;
     }
     select, input[type="text"], input[type="number"] {
         flex: 1;
         padding: 10px;
-        border: 1px solid #ccc;
+        border: 1px solid #555;
         border-radius: 4px;
         font-size: 1rem;
-        background-color: #fff;
+        background-color: #111;
+        color: #fff;
+    }
+    select:focus, input:focus {
+        outline: none;
+        border-color: #00e5ff;
+        box-shadow: 0 0 5px #00e5ff;
     }
     
     .score-row {
@@ -83,15 +96,16 @@
         gap: 8px;
         margin-bottom: 12px;
         align-items: center;
-        background: #fafafa;
+        background: rgba(0, 0, 0, 0.5);
         padding: 8px;
         border-radius: 6px;
-        border: 1px solid #eee;
+        border: 1px solid #00e5ff;
+        box-shadow: inset 0 0 8px rgba(0,229,255,0.2);
     }
     .score-row label {
         font-size: 0.85rem; 
         font-weight: bold;
-        color: #2c3e50; 
+        color: #fff; 
         width: 45px;
         text-align: center;
     }
@@ -104,12 +118,13 @@
     }
     
     .hole-result {
-        background: #e8f4f8;
+        background: rgba(255, 215, 0, 0.1);
         padding: 12px;
         border-radius: 6px;
         margin-top: 15px;
         font-size: 0.9rem;
-        border: 1px solid #bce0fd;
+        border: 1px solid #ffd700;
+        box-shadow: inset 0 0 10px rgba(255,215,0,0.1);
     }
     .result-row {
         display: flex;
@@ -118,7 +133,7 @@
     }
     
     .btn {
-        background-color: #27ae60;
+        background: linear-gradient(90deg, #ff007f, #7f00ff);
         color: white;
         border: none;
         padding: 15px;
@@ -129,42 +144,65 @@
         font-weight: bold;
         text-align: center;
         display: block;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 0 10px rgba(255,0,127,0.5);
         margin-top: 10px;
+        text-shadow: 0 0 3px #fff;
     }
-    .btn:active { background-color: #219653; }
-    .btn-secondary { background-color: #7f8c8d; margin-top: 15px;}
-    .btn-secondary:active { background-color: #636e72; }
-    .btn-info { background-color: #2980b9; padding: 12px; font-size: 1rem; }
+    .btn:active { transform: scale(0.98); }
+    .btn-secondary { 
+        background: transparent; 
+        border: 1px solid #aaa; 
+        color: #aaa; 
+        box-shadow: none; 
+        text-shadow: none; 
+        margin-top: 15px;
+    }
+    .btn-info { 
+        background: linear-gradient(90deg, #00e5ff, #007fff);
+        box-shadow: 0 0 10px rgba(0,229,255,0.5);
+        padding: 12px; 
+        font-size: 1rem; 
+    }
 
     .error-msg {
-        color: #e74c3c;
+        color: #ff1744;
         font-size: 0.85rem;
         text-align: center;
         margin-bottom: 10px;
         font-weight: bold;
+        text-shadow: 0 0 5px #ff1744;
         display: none;
     }
 
-    /* ▼結果テーブルを極限までコンパクトにするCSS調整▼ */
     .result-table {
         width: 100%;
         border-collapse: collapse;
         text-align: center;
-        font-size: 0.75rem; /* 全体を小さく */
+        font-size: 0.75rem;
     }
     .result-table th, .result-table td {
-        border: 1px solid #ddd;
-        padding: 1px 1px; /* 余白を極小に */
-        line-height: 1.05; /* 行間を詰める */
+        border: 1px solid #444;
+        padding: 1px 1px;
+        line-height: 1.05;
+        color: #fff;
     }
     .result-table th {
-        background-color: #2c3e50;
-        color: white;
+        background-color: #1a0b2e;
+        color: #ffd700;
         padding: 3px 1px;
     }
-    .result-table tr:nth-child(even) {
-        background-color: #f9f9f9;
+    .result-table tr:nth-child(even) td {
+        background-color: rgba(255,255,255,0.05);
+    }
+    .result-table tr:nth-child(odd) td {
+        background-color: transparent;
+    }
+    
+    /* PNGダウンロード時に背景が透明にならないようにエリア色を固定 */
+    #captureArea {
+        background: #11081f !important;
+        border: 2px solid #00e5ff;
+        box-shadow: 0 0 15px rgba(0,229,255,0.3);
     }
 </style>
 </head>
@@ -173,12 +211,12 @@
     <div id="setupView" class="view-section active">
         <div class="container">
             <div class="card" style="margin-top: 5px;">
-                <div class="card-title">基本設定</div>
+                <div class="card-title">CASINO SETUP</div>
                 <div class="input-group"><label>オナー</label><input type="text" id="nameA" value="プレイヤー1"></div>
                 <div class="input-group"><label>2nd</label><input type="text" id="nameB" value="プレイヤー2"></div>
                 <div class="input-group"><label>3rd</label><input type="text" id="nameC" value="プレイヤー3"></div>
                 <div class="input-group"><label>4th</label><input type="text" id="nameD" value="プレイヤー4"></div>
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+                <hr style="border: 0; border-top: 1px solid #444; margin: 10px 0;">
                 
                 <div class="input-group" style="margin-bottom: 8px;">
                     <label>開始ホール</label>
@@ -188,8 +226,8 @@
                     </select>
                 </div>
                 
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
-                <div style="font-size: 0.85rem; color: #555; margin-bottom: 5px; font-weight: bold;">各ホールのパー数設定</div>
+                <hr style="border: 0; border-top: 1px solid #444; margin: 10px 0;">
+                <div style="font-size: 0.85rem; color: #aaa; margin-bottom: 5px; font-weight: bold;">各ホールのパー数設定</div>
                 <div id="parInputContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px;">
                     <div><span>H1:</span><select id="parHole1"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
                     <div><span>H2:</span><select id="parHole2"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
@@ -211,14 +249,14 @@
                     <div><span>H18:</span><select id="parHole18"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
                 </div>
                 
-                <button class="btn" id="startBtn">ラウンド開始</button>
+                <button class="btn" id="startBtn">GAME START</button>
             </div>
         </div>
     </div>
 
     <div id="gameView" class="view-section">
         <div class="sticky-header">
-            <div style="font-size: 0.8rem; text-align: center; margin-bottom: 5px;">現在までの合計収支</div>
+            <div style="font-size: 0.8rem; text-align: center; margin-bottom: 5px; font-weight: bold;">TOTAL CHIPS</div>
             <div class="totals-grid">
                 <div><div class="totals-name" id="h-name0">A</div><div id="h-total0">0</div><div class="totals-pt" id="h-yen0">¥0</div></div>
                 <div><div class="totals-name" id="h-name1">B</div><div id="h-total1">0</div><div class="totals-pt" id="h-yen1">¥0</div></div>
@@ -230,8 +268,8 @@
         <div class="container">
             <div class="card">
                 <div class="card-title">
-                    <span id="currentHoleLabel">Hole -- (1/18)</span>
-                    <span style="font-size: 0.9rem; font-weight: normal;">Par 
+                    <span id="currentHoleLabel" style="color: #fff; text-shadow: none;">Hole -- (1/18)</span>
+                    <span style="font-size: 0.9rem; font-weight: normal; color: #ffd700;">Par 
                         <select id="currentPar" style="width:60px; padding: 4px;">
                             <option value="3">3</option><option value="4">4</option><option value="5">5</option>
                         </select>
@@ -241,50 +279,50 @@
                 <div id="errorMsg" class="error-msg">打者が重複しています！異なる4名を選択してください。</div>
 
                 <div class="score-row">
-                    <label>オナー<br><span style="font-size:0.7rem; font-weight:normal; color:#e74c3c;">(ﾁｰﾑX)</span></label>
+                    <label>オナー<br><span style="font-size:0.7rem; font-weight:normal; color:#ff007f;">(ﾁｰﾑX)</span></label>
                     <select id="b1_player"></select>
                     <select id="b1_score" class="score-select"></select>
                 </div>
                 <div class="score-row">
-                    <label>2nd<br><span style="font-size:0.7rem; font-weight:normal; color:#2980b9;">(ﾁｰﾑY)</span></label>
+                    <label>2nd<br><span style="font-size:0.7rem; font-weight:normal; color:#00e5ff;">(ﾁｰﾑY)</span></label>
                     <select id="b2_player"></select>
                     <select id="b2_score" class="score-select"></select>
                 </div>
                 <div class="score-row">
-                    <label>3rd<br><span style="font-size:0.7rem; font-weight:normal; color:#2980b9;">(ﾁｰﾑY)</span></label>
+                    <label>3rd<br><span style="font-size:0.7rem; font-weight:normal; color:#00e5ff;">(ﾁｰﾑY)</span></label>
                     <select id="b3_player"></select>
                     <select id="b3_score" class="score-select"></select>
                 </div>
                 <div class="score-row">
-                    <label>4th<br><span style="font-size:0.7rem; font-weight:normal; color:#e74c3c;">(ﾁｰﾑX)</span></label>
+                    <label>4th<br><span style="font-size:0.7rem; font-weight:normal; color:#ff007f;">(ﾁｰﾑX)</span></label>
                     <select id="b4_player"></select>
                     <select id="b4_score" class="score-select"></select>
                 </div>
 
                 <div class="hole-result">
                     <div class="result-row">
-                        <span style="color:#e74c3c;">チームX(1&4)得点: <strong id="preview_tA">-</strong></span>
-                        <span style="color:#2980b9;">チームY(2&3)得点: <strong id="preview_tB">-</strong></span>
+                        <span style="color:#ff007f; text-shadow: 0 0 3px #ff007f;">チームX(1&4): <strong id="preview_tA">-</strong></span>
+                        <span style="color:#00e5ff; text-shadow: 0 0 3px #00e5ff;">チームY(2&3): <strong id="preview_tB">-</strong></span>
                     </div>
-                    <div class="result-row">
-                        <span style="font-weight:bold;">発生キャリー: <span id="preview_carry" style="color:#d35400;">1x</span></span>
+                    <div class="result-row" style="margin-top: 5px;">
+                        <span style="font-weight:bold; color:#fff;">発生キャリー: <span id="preview_carry" style="color:#ffd700; text-shadow: 0 0 5px #ffd700; font-size:1.2rem;">1x</span></span>
                     </div>
-                    <div class="result-row" style="font-size: 0.85rem; margin-top: 5px; color:#555;">
+                    <div class="result-row" style="font-size: 0.85rem; margin-top: 5px; color:#ccc;">
                         <span>移動Pt:</span>
-                        <span id="preview_pts">-</span>
+                        <span id="preview_pts" style="color:#fff; font-weight:bold;">-</span>
                     </div>
                 </div>
 
-                <button class="btn" id="nextBtn">結果を保存して次へ進む</button>
-                <button class="btn btn-secondary" id="backBtn" style="display:none;">一つ前のホールに戻る</button>
+                <button class="btn" id="nextBtn">SAVE & NEXT</button>
+                <button class="btn btn-secondary" id="backBtn" style="display:none;">UNDO (戻る)</button>
             </div>
         </div>
     </div>
 
     <div id="resultView" class="view-section">
         <div class="container" style="padding-top: 5px;">
-            <div class="card" id="captureArea" style="padding: 5px 8px; background: white; border-radius: 8px; margin-bottom: 5px;">
-                <div class="card-title" style="margin-bottom: 3px; padding-bottom: 3px; font-size: 1rem;">ラウンド最終結果</div>
+            <div class="card" id="captureArea" style="padding: 5px 8px; border-radius: 8px; margin-bottom: 5px;">
+                <div class="card-title" style="margin-bottom: 3px; padding-bottom: 3px; font-size: 1rem; text-align:center; justify-content:center; color:#ffd700; border-bottom: 1px solid #ffd700;">FINAL RESULT</div>
                 <div id="resultTableContainer"></div>
             </div>
             <button class="btn btn-info" id="downloadBtn" style="margin-top: 8px;">結果をPNG画像でダウンロード</button>
@@ -392,7 +430,7 @@
         document.getElementById('currentHoleLabel').textContent = `Hole ${actualHole} (${currentStep + 1}/18)`;
         
         document.getElementById('backBtn').style.display = (currentStep > 0) ? 'block' : 'none';
-        document.getElementById('nextBtn').textContent = (currentStep === 17) ? '結果を保存して終了する' : '結果を保存して次へ進む';
+        document.getElementById('nextBtn').textContent = (currentStep === 17) ? 'SAVE & FINISH (終了)' : 'SAVE & NEXT';
 
         if (roundData[currentStep]) {
             let data = roundData[currentStep];
@@ -422,7 +460,6 @@
                 document.getElementById(`b${j}_score`).value = '4';
             }
         }
-
         document.getElementById('errorMsg').style.display = 'none';
         calcPreview();
     }
@@ -510,6 +547,7 @@
 
         roundData[currentStep] = result;
 
+        // 同点なら倍率を無限に加算
         if (result.isTie) {
             currentCarryMultiplier++;
         } else {
@@ -576,25 +614,24 @@
         for(let i=0; i<HOLES; i++) {
             let d = roundData[i];
             let hNum = holeSequence[i];
-            // ▼ 行の余白を極小にし、文字を詰める ▼
             html += `<tr><td>${hNum}</td><td>${d.par}</td>`;
             for(let p=0; p<4; p++) {
                 let bIndex = d.batters.indexOf(p);
                 let score = d.scores[bIndex];
                 let move = d.move[p];
                 let moveStr = move > 0 ? `+${move}` : (move === 0 ? '±0' : String(move));
-                let color = move > 0 ? '#c0392b' : (move < 0 ? '#2980b9' : '#7f8c8d');
-                html += `<td><span style="font-size:0.85rem;font-weight:bold;">${score}</span><br><span style="font-size:0.65rem;color:${color};">${moveStr}</span></td>`;
+                // プラス収支=青(#00e5ff)、マイナス収支=赤(#ff1744)
+                let color = move > 0 ? '#00e5ff' : (move < 0 ? '#ff1744' : '#aaaaaa');
+                html += `<td><span style="font-size:0.85rem;font-weight:bold;">${score}</span><br><span style="font-size:0.65rem;color:${color};text-shadow:0 0 2px ${color};">${moveStr}</span></td>`;
                 totals[p] += move;
             }
             html += '</tr>';
         }
         
-        // ▼ 合計行もコンパクトに ▼
-        html += '<tr style="background-color: #ecf0f1; font-weight: bold; border-top: 2px solid #bdc3c7;"><td>計</td><td>-</td>';
+        html += '<tr style="background-color: rgba(255,215,0,0.15); font-weight: bold; border-top: 2px solid #ffd700;"><td>計</td><td>-</td>';
         for(let i=0; i<4; i++) {
-            let color = totals[i] > 0 ? '#c0392b' : (totals[i] < 0 ? '#2980b9' : '#333');
-            html += `<td style="padding: 4px 1px;"><span style="color:${color}">${totals[i]}</span><br><span style="font-size:0.6rem; font-weight:normal;">¥${totals[i] * RATE}</span></td>`;
+            let color = totals[i] > 0 ? '#00e5ff' : (totals[i] < 0 ? '#ff1744' : '#ffffff');
+            html += `<td style="padding: 4px 1px;"><span style="color:${color};text-shadow:0 0 3px ${color};">${totals[i]}</span><br><span style="font-size:0.6rem; font-weight:normal; color:#ffd700;">¥${totals[i] * RATE}</span></td>`;
         }
         html += '</tr></table>';
         
@@ -603,9 +640,9 @@
 
     function downloadPNG() {
         let target = document.getElementById('captureArea');
-        html2canvas(target, { scale: 2 }).then(canvas => {
+        html2canvas(target, { scale: 2, backgroundColor: '#11081f' }).then(canvas => {
             let link = document.createElement('a');
-            link.download = 'lasvegas_result.png';
+            link.download = 'lasvegas_casino_result.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
         });
