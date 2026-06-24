@@ -179,10 +179,10 @@
         <div class="container">
             <div class="card" style="margin-top: 10px;">
                 <div class="card-title">基本設定 (プレイヤー)</div>
-                <div class="input-group"><label>Aさん</label><input type="text" id="nameA" value="Aさん"></div>
-                <div class="input-group"><label>Bさん</label><input type="text" id="nameB" value="Bさん"></div>
-                <div class="input-group"><label>Cさん</label><input type="text" id="nameC" value="Cさん"></div>
-                <div class="input-group"><label>Dさん</label><input type="text" id="nameD" value="Dさん"></div>
+                <div class="input-group"><label>プレイヤー1</label><input type="text" id="nameA" value="プレイヤー名1"></div>
+                <div class="input-group"><label>プレイヤー2</label><input type="text" id="nameB" value="プレイヤー名2"></div>
+                <div class="input-group"><label>プレイヤー3</label><input type="text" id="nameC" value="プレイヤー名3"></div>
+                <div class="input-group"><label>プレイヤー4</label><input type="text" id="nameD" value="プレイヤー名4"></div>
                 
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
                 
@@ -205,10 +205,10 @@
         <div class="sticky-header">
             <div style="font-size: 0.8rem; text-align: center; margin-bottom: 5px;">現在までの合計収支</div>
             <div class="totals-grid">
-                <div><div class="totals-name" id="h-name0">A</div><div id="h-total0">0</div><div class="totals-pt" id="h-yen0">¥0</div></div>
-                <div><div class="totals-name" id="h-name1">B</div><div id="h-total1">0</div><div class="totals-pt" id="h-yen1">¥0</div></div>
-                <div><div class="totals-name" id="h-name2">C</div><div id="h-total2">0</div><div class="totals-pt" id="h-yen2">¥0</div></div>
-                <div><div class="totals-name" id="h-name3">D</div><div id="h-total3">0</div><div class="totals-pt" id="h-yen3">¥0</div></div>
+                <div><div class="totals-name" id="h-name0">P1</div><div id="h-total0">0</div><div class="totals-pt" id="h-yen0">¥0</div></div>
+                <div><div class="totals-name" id="h-name1">P2</div><div id="h-total1">0</div><div class="totals-pt" id="h-yen1">¥0</div></div>
+                <div><div class="totals-name" id="h-name2">P3</div><div id="h-total2">0</div><div class="totals-pt" id="h-yen2">¥0</div></div>
+                <div><div class="totals-name" id="h-name3">P4</div><div id="h-total3">0</div><div class="totals-pt" id="h-yen3">¥0</div></div>
             </div>
         </div>
 
@@ -220,22 +220,22 @@
                 </div>
 
                 <div class="score-row">
-                    <label>1番打者<br><span style="font-size:0.7rem; font-weight:normal; color:#e74c3c;">(ﾁｰﾑX)</span></label>
+                    <label>オナー<br><span style="font-size:0.7rem; font-weight:normal; color:#e74c3c;">(ﾁｰﾑX)</span></label>
                     <select id="b1_player" disabled></select>
                     <select id="b1_score" class="score-select" onchange="calcPreview()"></select>
                 </div>
                 <div class="score-row">
-                    <label>2番打者<br><span style="font-size:0.7rem; font-weight:normal; color:#2980b9;">(ﾁｰﾑY)</span></label>
+                    <label>2nd<br><span style="font-size:0.7rem; font-weight:normal; color:#2980b9;">(ﾁｰﾑY)</span></label>
                     <select id="b2_player" disabled></select>
                     <select id="b2_score" class="score-select" onchange="calcPreview()"></select>
                 </div>
                 <div class="score-row">
-                    <label>3番打者<br><span style="font-size:0.7rem; font-weight:normal; color:#2980b9;">(ﾁｰﾑY)</span></label>
+                    <label>3rd<br><span style="font-size:0.7rem; font-weight:normal; color:#2980b9;">(ﾁｰﾑY)</span></label>
                     <select id="b3_player" disabled></select>
                     <select id="b3_score" class="score-select" onchange="calcPreview()"></select>
                 </div>
                 <div class="score-row">
-                    <label>4番打者<br><span style="font-size:0.7rem; font-weight:normal; color:#e74c3c;">(ﾁｰﾑX)</span></label>
+                    <label>4th<br><span style="font-size:0.7rem; font-weight:normal; color:#e74c3c;">(ﾁｰﾑX)</span></label>
                     <select id="b4_player" disabled></select>
                     <select id="b4_score" class="score-select" onchange="calcPreview()"></select>
                 </div>
@@ -288,28 +288,32 @@
     // 現在の打順配列 (プレイヤーID 0,1,2,3 の並び順)
     let currentBatters = [0, 1, 2, 3]; 
 
-    // 初期化処理
-    window.onload = function() {
+    // 初期化処理 (window.onload から DOMContentLoaded に変更し確実に実行させる)
+    document.addEventListener('DOMContentLoaded', function() {
         // スタートホールの選択肢
         const startHoleSel = document.getElementById('startHoleInput');
-        for(let i=1; i<=18; i++) {
-            startHoleSel.options.add(new Option(i + '番ホール', i));
+        if (startHoleSel) {
+            for(let i=1; i<=18; i++) {
+                startHoleSel.options.add(new Option(i + '番ホール', i));
+            }
         }
         
         // 18ホール分のパー設定グリッドを生成
         const parContainer = document.getElementById('parSetupContainer');
-        for(let i=1; i<=18; i++) {
-            let div = document.createElement('div');
-            div.className = 'par-input-group';
-            div.innerHTML = `
-                <label>${i}番</label>
-                <select id="par_h${i}">
-                    <option value="3">3</option>
-                    <option value="4" selected>4</option>
-                    <option value="5">5</option>
-                </select>
-            `;
-            parContainer.appendChild(div);
+        if (parContainer) {
+            for(let i=1; i<=18; i++) {
+                let div = document.createElement('div');
+                div.className = 'par-input-group';
+                div.innerHTML = `
+                    <label>${i}番</label>
+                    <select id="par_h${i}">
+                        <option value="3">3</option>
+                        <option value="4" selected>4</option>
+                        <option value="5">5</option>
+                    </select>
+                `;
+                parContainer.appendChild(div);
+            }
         }
 
         // スコアの選択肢 (1~15)
@@ -320,22 +324,23 @@
                 sel.options.add(new Option(i + '打', i));
             }
         });
-    };
+    });
 
     function startGame() {
         players = [
-            document.getElementById('nameA').value || 'A',
-            document.getElementById('nameB').value || 'B',
-            document.getElementById('nameC').value || 'C',
-            document.getElementById('nameD').value || 'D'
+            document.getElementById('nameA').value || 'プレイヤー名1',
+            document.getElementById('nameB').value || 'プレイヤー名2',
+            document.getElementById('nameC').value || 'プレイヤー名3',
+            document.getElementById('nameD').value || 'プレイヤー名4'
         ];
 
         // 各ホールのパーを取得
         for(let i=1; i<=18; i++) {
-            holePars[i] = parseInt(document.getElementById(`par_h${i}`).value);
+            let parEl = document.getElementById(`par_h${i}`);
+            if (parEl) holePars[i] = parseInt(parEl.value);
         }
 
-        // ヘッダーに名前反映
+        // ヘッダーに名前反映 (先頭4文字)
         for(let i=0; i<4; i++) {
             document.getElementById(`h-name${i}`).innerText = players[i].substring(0,4);
         }
@@ -353,7 +358,7 @@
         roundData = [];
         currentStep = 0;
         currentCarryMultiplier = 1;
-        currentBatters = [0, 1, 2, 3]; // 最初はA,B,C,Dの順
+        currentBatters = [0, 1, 2, 3]; // 最初はP1,P2,P3,P4の順
         
         updateHeaderTotals();
         switchView('gameView');
@@ -368,7 +373,7 @@
 
     function renderCurrentHole() {
         let actualHole = holeSequence[currentStep];
-        let par = holePars[actualHole];
+        let par = holePars[actualHole] || 4; // フォールバック
         
         document.getElementById('currentHoleLabel').innerText = `Hole ${actualHole} (${currentStep + 1}/18)`;
         document.getElementById('currentParText').innerText = par;
@@ -402,7 +407,7 @@
 
     function calcPreview() {
         let actualHole = holeSequence[currentStep];
-        let par = holePars[actualHole];
+        let par = holePars[actualHole] || 4;
         
         let s = [];
         let isComplete = true;
@@ -561,13 +566,5 @@
 
     function downloadCSV() {
         let csv = '\uFEFF'; 
-        let header = ['Hole', 'Par', '1番打者', '1番打数', '2番打者', '2番打数', '3番打者', '3番打数', '4番打者', '4番打数', 'チームX(1&4)得点', 'チームY(2&3)得点', '適用倍率'];
-        for(let p=0; p<4; p++) header.push(players[p] + ' Pt');
-        csv += header.join(',') + '\n';
-
-        for (let i = 0; i < HOLES; i++) {
-            let d = roundData[i];
-            if(!d) continue; 
-
-            let row = [d.holeNum, d.par];
-     
+        // ヘッダーの表記を変更
+        let header = ['Hole', 
