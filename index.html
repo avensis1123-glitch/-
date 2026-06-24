@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ラスベガス集計アプリ(スマホ版)</title>
+<title>ラスベガス集計アプリ(スマホ最適化版)</title>
 <style>
     body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -11,8 +11,19 @@
         color: #333;
         margin: 0;
         padding: 0;
-        padding-bottom: 80px; /* フッター領域の確保 */
     }
+    /* 1. 設定ページ */
+    #setupPage {
+        padding: 20px;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    /* 2. ゲームプレイページ（初期状態は非表示） */
+    #gamePage {
+        display: none;
+        padding-bottom: 80px;
+    }
+    
     .sticky-header {
         position: sticky;
         top: 0;
@@ -60,16 +71,16 @@
     .input-group {
         display: flex;
         align-items: center;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
     }
     .input-group label {
-        flex: 0 0 60px;
-        font-size: 0.9rem;
+        flex: 0 0 70px;
+        font-size: 1rem;
         color: #555;
     }
     select, input[type="text"], input[type="number"] {
         flex: 1;
-        padding: 8px;
+        padding: 10px;
         border: 1px solid #ccc;
         border-radius: 4px;
         font-size: 1rem;
@@ -89,7 +100,7 @@
         flex: 1;
     }
     .score-row input {
-        width: 70px;
+        width: 75px;
         flex: none;
     }
     .hole-result {
@@ -108,47 +119,55 @@
         background-color: #27ae60;
         color: white;
         border: none;
-        padding: 12px;
-        font-size: 1rem;
-        border-radius: 5px;
+        padding: 14px;
+        font-size: 1.1rem;
+        border-radius: 6px;
         cursor: pointer;
         width: 100%;
         font-weight: bold;
         text-align: center;
         display: block;
-        margin-top: 10px;
+        margin-top: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .btn:active { background-color: #219653; }
-    .btn-secondary { background-color: #34495e; }
+    .btn-secondary { background-color: #34495e; margin-bottom: 20px;}
 </style>
 </head>
 <body>
 
-    <div class="sticky-header">
-        <div style="font-size: 0.8rem; text-align: center; margin-bottom: 5px;">現在までの合計収支 (1pt=50円)</div>
-        <div class="totals-grid">
-            <div><div class="totals-name" id="h-name0">A</div><div id="h-total0">0</div><div class="totals-pt" id="h-yen0">¥0</div></div>
-            <div><div class="totals-name" id="h-name1">B</div><div id="h-total1">0</div><div class="totals-pt" id="h-yen1">¥0</div></div>
-            <div><div class="totals-name" id="h-name2">C</div><div id="h-total2">0</div><div class="totals-pt" id="h-yen2">¥0</div></div>
-            <div><div class="totals-name" id="h-name3">D</div><div id="h-total3">0</div><div class="totals-pt" id="h-yen3">¥0</div></div>
-        </div>
-    </div>
-
-    <div class="container">
-        <div class="card">
-            <div class="card-title">プレイヤー設定</div>
+    <div id="setupPage">
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-title">プレイヤー登録</div>
             <div class="input-group"><label>Aさん</label><input type="text" id="nameA" value="Aさん"></div>
             <div class="input-group"><label>Bさん</label><input type="text" id="nameB" value="Bさん"></div>
             <div class="input-group"><label>Cさん</label><input type="text" id="nameC" value="Cさん"></div>
             <div class="input-group"><label>Dさん</label><input type="text" id="nameD" value="Dさん"></div>
-            <button class="btn" onclick="initializeHoles()">設定を反映</button>
-            <p style="font-size: 0.75rem; color: #666; margin-top:10px; text-align:center;">※1&4番 vs 2&3番 / 点差上限20 / 同点キャリー</p>
+            <button class="btn" onclick="initializeHoles()">設定を反映してスコア入力へ</button>
+            <p style="font-size: 0.8rem; color: #666; margin-top:15px; text-align:center; line-height: 1.4;">
+                【ルール構成】<br>
+                1&4番打者 vs 2&3番打者<br>
+                1点50円 / 最大点差20 / 同点時次ホールキャリー
+            </p>
+        </div>
+    </div>
+
+    <div id="gamePage">
+        <div class="sticky-header">
+            <div style="font-size: 0.8rem; text-align: center; margin-bottom: 5px;">現在までの合計収支</div>
+            <div class="totals-grid">
+                <div><div class="totals-name" id="h-name0">A</div><div id="h-total0">0</div><div class="totals-pt" id="h-yen0">¥0</div></div>
+                <div><div class="totals-name" id="h-name1">B</div><div id="h-total1">0</div><div class="totals-pt" id="h-yen1">¥0</div></div>
+                <div><div class="totals-name" id="h-name2">C</div><div id="h-total2">0</div><div class="totals-pt" id="h-yen2">¥0</div></div>
+                <div><div class="totals-name" id="h-name3">D</div><div id="h-total3">0</div><div class="totals-pt" id="h-yen3">¥0</div></div>
+            </div>
         </div>
 
-        <div id="holesContainer">
-            </div>
-
-        <button class="btn btn-secondary" onclick="downloadCSV()">集計詳細をCSVダウンロード</button>
+        <div class="container">
+            <div id="holesContainer">
+                </div>
+            <button class="btn btn-secondary" onclick="downloadCSV()">集計詳細をCSVダウンロード</button>
+        </div>
     </div>
 
 <script>
@@ -158,6 +177,7 @@
     let players = [];
 
     function initializeHoles() {
+        // プレイヤー名の取得
         players = [
             document.getElementById('nameA').value || 'A',
             document.getElementById('nameB').value || 'B',
@@ -165,13 +185,15 @@
             document.getElementById('nameD').value || 'D'
         ];
 
+        // 固定ヘッダーに名前を反映
         for(let i=0; i<4; i++) {
-            document.getElementById(`h-name${i}`).innerText = players[i].substring(0,4); // ヘッダーは文字数制限
+            document.getElementById(`h-name${i}`).innerText = players[i].substring(0,4);
         }
 
         const container = document.getElementById('holesContainer');
         container.innerHTML = '';
 
+        // 18ホール分のカードを動的生成
         for (let i = 1; i <= HOLES; i++) {
             let card = document.createElement('div');
             card.className = 'card';
@@ -186,7 +208,7 @@
             for (let j = 1; j <= 4; j++) {
                 html += `
                     <div class="score-row">
-                        <span style="font-size:0.8rem; color:#7f8c8d; width:25px;">${j}打</span>
+                        <span style="font-size:0.85rem; color:#7f8c8d; width:30px;">${j}打</span>
                         <select id="batter${j}_${i}" onchange="calculateAll()">
                             <option value="0">${players[0]}</option>
                             <option value="1" ${j===2?'selected':''}>${players[1]}</option>
@@ -209,7 +231,7 @@
                     </div>
                     <div class="result-row" style="font-size: 0.8rem; margin-top: 5px; color:#555;">
                         <span>ポイント移動:</span>
-                        <span id="pt_summary_${i}">-</span>
+                        <span id="pt_summary_${i}">未入力</span>
                     </div>
                 </div>
             `;
@@ -217,7 +239,15 @@
             card.innerHTML = html;
             container.appendChild(card);
         }
+
+        // 画面の表示切り替え
+        document.getElementById('setupPage').style.display = 'none';
+        document.getElementById('gamePage').style.display = 'block';
+
+        // 初期計算の実行
         calculateAll();
+        // 画面最上部へスクロール
+        window.scrollTo(0, 0);
     }
 
     function getTeamScore(score1, score2, isReversed) {
@@ -276,7 +306,6 @@
                 pts[b[2]] += pointsMoved; pts[b[3]] += pointsMoved;
             }
 
-            // ホール結果のサマリー表示
             let summaryText = "";
             for(let p=0; p<4; p++) {
                 totals[p] += pts[p];
@@ -293,7 +322,6 @@
             }
         }
 
-        // ヘッダー合計の更新
         for (let p = 0; p < 4; p++) {
             document.getElementById(`h-total${p}`).innerText = totals[p] > 0 ? '+' + totals[p] : totals[p];
             document.getElementById(`h-yen${p}`).innerText = '¥' + (totals[p] * RATE).toLocaleString();
@@ -302,12 +330,10 @@
 
     function downloadCSV() {
         let csv = '\uFEFF'; 
-        // ヘッダー行作成
         let header = ['Hole', 'Par', '1番打者', '1番スコア', '2番打者', '2番スコア', '3番打者', '3番スコア', '4番打者', '4番スコア', 'T(1&4)得点', 'T(2&3)得点', '倍率'];
         for(let p=0; p<4; p++) header.push(players[p] + ' Pt');
         csv += header.join(',') + '\n';
 
-        // データを集計から再構築して出力（DOM依存を減らし確実なデータ抽出を行う）
         let carryMultiplier = 1;
         for (let i = 1; i <= HOLES; i++) {
             let row = [i];
@@ -326,8 +352,8 @@
             }
 
             if (!isComplete) {
-                row.push('','',''); // 得点・倍率を空欄
-                row.push('','','',''); // 各人のポイントを空欄
+                row.push('','','');
+                row.push('','','','');
                 csv += row.join(',') + '\n';
                 continue;
             }
@@ -349,3 +375,22 @@
             } else if (scoreB < scoreA) {
                 pts[b[1]] -= pMove; pts[b[4]] -= pMove;
                 pts[b[2]] += pMove; pts[b[3]] += pMove;
+            }
+
+            for(let p=0; p<4; p++) row.push(pts[p]);
+            csv += row.join(',') + '\n';
+
+            carryMultiplier = (scoreA === scoreB) ? carryMultiplier + 1 : 1;
+        }
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', 'lasvegas_mobile_result.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+</body>
+</html>
