@@ -660,12 +660,58 @@
     }
 
     function downloadPNG() {
+        let btn = document.getElementById('downloadBtn');
+        let originalText = btn.textContent;
+        btn.textContent = "画像生成中...少し待つっす！";
+        btn.disabled = true;
+
         let target = document.getElementById('captureArea');
         html2canvas(target, { scale: 2, backgroundColor: '#11081f' }).then(canvas => {
-            let link = document.createElement('a');
-            link.download = 'lasvegas_casino_result.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            try {
+                // 生成された画像データ
+                let imgData = canvas.toDataURL('image/png');
+                
+                // 1. 通常のダウンロード処理（Safari / Chrome向け）
+                let link = document.createElement('a');
+                link.download = 'lasvegas_casino_result.png';
+                link.href = imgData;
+                link.click();
+                
+                // 2. 完了の知らせ（アラート）
+                alert("画像の生成が完了したっす！\n※自動でダウンロードされない場合（LINE等）は、画面下に出現した画像を長押しして保存してほしいっす！");
+
+                // 3. LINEブラウザ等への堅牢な対策（画面上に実体画像を出力して長押し保存させる）
+                let existingImgBox = document.getElementById('fallback-container');
+                if(!existingImgBox) {
+                    let container = document.createElement('div');
+                    container.id = 'fallback-container';
+                    container.style.marginTop = "20px";
+                    container.style.textAlign = "center";
+                    container.style.color = "#ffd700";
+                    container.style.fontSize = "0.85rem";
+                    container.innerHTML = "▼自動保存されない場合は、下の画像を長押しして「" + (navigator.userAgent.match(/iPhone|iPad|iPod/i) ? "写真に追加" : "画像を保存") + "」を選んでください▼<br>";
+                    
+                    let img = document.createElement('img');
+                    img.id = 'fallback-img';
+                    img.src = imgData;
+                    img.style.maxWidth = "100%";
+                    img.style.border = "2px solid #00e5ff";
+                    img.style.borderRadius = "8px";
+                    img.style.marginTop = "10px";
+                    img.style.boxShadow = "0 0 15px rgba(0,229,255,0.4)";
+                    
+                    container.appendChild(img);
+                    document.getElementById('resultView').querySelector('.container').appendChild(container);
+                } else {
+                    document.getElementById('fallback-img').src = imgData;
+                }
+            } catch (error) {
+                alert("画像保存中にエラーが起きたっす: " + error.message);
+            } finally {
+                // ボタンの状態を元に戻す
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
         });
     }
 </script>
