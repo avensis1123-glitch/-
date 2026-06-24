@@ -279,82 +279,87 @@
     let players = [];
     let holeSequence = [];
     let currentStep = 0; 
-    let initialPars = []; 
+    let initialPars = {}; // 安全のためオブジェクト管理に変更
     let roundData = []; 
     let currentCarryMultiplier = 1;
 
-    // 初期化処理：ブラウザ互換性の高いappendChild方式に変更
-    window.onload = function() {
+    // 最も安全なDOM構築タイミングで初期化を実行
+    document.addEventListener('DOMContentLoaded', function() {
         const scoreSelects = document.querySelectorAll('.score-select');
         scoreSelects.forEach(sel => {
             sel.innerHTML = '';
             let defOpt = document.createElement('option');
             defOpt.value = '';
-            defOpt.text = '選択';
+            defOpt.textContent = '選択';
             sel.appendChild(defOpt);
 
             for(let i=1; i<=MAX_SCORE; i++) {
                 let opt = document.createElement('option');
-                opt.value = i;
-                opt.text = i + '打';
+                opt.value = String(i);
+                opt.textContent = i + '打';
                 sel.appendChild(opt);
             }
         });
-    };
+    });
 
     function startGame() {
-        players = [
-            document.getElementById('nameA').value || 'プレイヤー1',
-            document.getElementById('nameB').value || 'プレイヤー2',
-            document.getElementById('nameC').value || 'プレイヤー3',
-            document.getElementById('nameD').value || 'プレイヤー4'
-        ];
+        try {
+            players = [
+                document.getElementById('nameA').value || 'プレイヤー1',
+                document.getElementById('nameB').value || 'プレイヤー2',
+                document.getElementById('nameC').value || 'プレイヤー3',
+                document.getElementById('nameD').value || 'プレイヤー4'
+            ];
 
-        // ヘッダーに名前反映
-        for(let i=0; i<4; i++) {
-            document.getElementById(`h-name${i}`).innerText = players[i].substring(0,4);
-        }
-
-        // 打者選択肢の生成（appendChild方式に修正して安全性を確保）
-        const playerSelects = [
-            document.getElementById('b1_player'), document.getElementById('b2_player'),
-            document.getElementById('b3_player'), document.getElementById('b4_player')
-        ];
-        playerSelects.forEach((sel, index) => {
-            sel.innerHTML = '';
+            // ヘッダーに名前反映
             for(let i=0; i<4; i++) {
-                let opt = document.createElement('option');
-                opt.value = i;
-                opt.text = players[i];
-                if(i === index) opt.selected = true; 
-                sel.appendChild(opt);
+                document.getElementById(`h-name${i}`).textContent = players[i].substring(0,4);
             }
-        });
 
-        // ホール順の生成
-        let sHole = parseInt(document.getElementById('startHoleInput').value);
-        holeSequence = [];
-        for(let i=0; i<HOLES; i++) {
-            let h = sHole + i;
-            if(h > 18) h -= 18;
-            holeSequence.push(h);
+            // 打者選択肢の生成
+            const playerSelects = [
+                document.getElementById('b1_player'), document.getElementById('b2_player'),
+                document.getElementById('b3_player'), document.getElementById('b4_player')
+            ];
+            playerSelects.forEach((sel, index) => {
+                sel.innerHTML = '';
+                for(let i=0; i<4; i++) {
+                    let opt = document.createElement('option');
+                    opt.value = String(i);
+                    opt.textContent = players[i];
+                    if(i === index) opt.selected = true; 
+                    sel.appendChild(opt);
+                }
+            });
+
+            // ホール順の生成
+            let sHole = parseInt(document.getElementById('startHoleInput').value, 10);
+            holeSequence = [];
+            for(let i=0; i<HOLES; i++) {
+                let h = sHole + i;
+                if(h > 18) h -= 18;
+                holeSequence.push(h);
+            }
+
+            // 各ホールの規定パー数を固定取得
+            initialPars = {};
+            for(let i=1; i<=18; i++) {
+                let pEl = document.getElementById(`parHole${i}`);
+                initialPars[String(i)] = pEl ? pEl.value : "4";
+            }
+
+            // 初期化
+            roundData = [];
+            currentStep = 0;
+            currentCarryMultiplier = 1;
+            updateHeaderTotals();
+
+            // 画面切り替え
+            switchView('gameView');
+            renderCurrentHole();
+        } catch (error) {
+            alert("【デバッグ情報】開始処理でエラーが発生しました: " + error.message);
         }
-
-        // 各ホールの規定パー数を取得
-        initialPars = [];
-        for(let i=1; i<=18; i++) {
-            initialPars[i] = parseInt(document.getElementById(`parHole${i}`).value);
-        }
-
-        // 初期化
-        roundData = [];
-        currentStep = 0;
-        currentCarryMultiplier = 1;
-        updateHeaderTotals();
-
-        // 画面切り替え
-        switchView('gameView');
-        renderCurrentHole();
     }
 
     function switchView(viewId) {
@@ -364,109 +369,94 @@
     }
 
     function renderCurrentHole() {
-        let actualHole = holeSequence[currentStep];
-        document.getElementById('currentHoleLabel').innerText = `Hole ${actualHole} (${currentStep + 1}/18)`;
-        
-        document.getElementById('backBtn').style.display = (currentStep > 0) ? 'block' : 'none';
-        document.getElementById('nextBtn').innerText = (currentStep === 17) ? '結果を保存して終了する' : '結果を保存して次へ進む';
+        try {
+            let actualHole = holeSequence[currentStep];
+            document.getElementById('currentHoleLabel').textContent = `Hole ${actualHole} (${currentStep + 1}/18)`;
+            
+            document.getElementById('backBtn').style.display = (currentStep > 0) ? 'block' : 'none';
+            document.getElementById('nextBtn').textContent = (currentStep === 17) ? '結果を保存して終了する' : '結果を保存して次へ進む';
 
-        if (roundData[currentStep]) {
-            let data = roundData[currentStep];
-            document.getElementById('currentPar').value = data.par;
-            for(let j=1; j<=4; j++) {
-                document.getElementById(`b${j}_player`).value = String(data.batters[j-1]);
-                document.getElementById(`b${j}_score`).value = data.scores[j-1];
-            }
-        } else {
-            document.getElementById('currentPar').value = initialPars[actualHole];
+            if (roundData[currentStep]) {
+                let data = roundData[currentStep];
+                document.getElementById('currentPar').value = String(data.par);
+                for(let j=1; j<=4; j++) {
+                    document.getElementById(`b${j}_player`).value = String(data.batters[j-1]);
+                    document.getElementById(`b${j}_score`).value = String(data.scores[j-1]);
+                }
+            } else {
+                document.getElementById('currentPar').value = String(initialPars[String(actualHole)] || "4");
 
-            // 打順ソートロジック
-            let currentOrder = [0, 1, 2, 3]; 
-            if (currentStep > 0) {
-                let prevData = roundData[currentStep - 1];
-                currentOrder.sort((a, b) => {
-                    let idxA = prevData.batters.indexOf(a);
-                    let idxB = prevData.batters.indexOf(b);
-                    let scoreA = prevData.scores[idxA];
-                    let scoreB = prevData.scores[idxB];
-                    
-                    if (scoreA !== scoreB) {
-                        return scoreA - scoreB;
-                    }
-                    return idxA - idxB;
-                });
+                // 打順ソートロジック
+                let currentOrder = [0, 1, 2, 3]; 
+                if (currentStep > 0) {
+                    let prevData = roundData[currentStep - 1];
+                    currentOrder.sort((a, b) => {
+                        let idxA = prevData.batters.indexOf(a);
+                        let idxB = prevData.batters.indexOf(b);
+                        let scoreA = prevData.scores[idxA];
+                        let scoreB = prevData.scores[idxB];
+                        
+                        if (scoreA !== scoreB) {
+                            return scoreA - scoreB;
+                        }
+                        return idxA - idxB;
+                    });
+                }
+
+                // 打順の自動セット
+                for(let j=1; j<=4; j++) {
+                    document.getElementById(`b${j}_player`).value = String(currentOrder[j-1]);
+                    document.getElementById(`b${j}_score`).value = '';
+                }
             }
 
-            // 打順の自動セット
-            for(let j=1; j<=4; j++) {
-                document.getElementById(`b${j}_player`).value = String(currentOrder[j-1]);
-                document.getElementById(`b${j}_score`).value = '';
-            }
+            document.getElementById('errorMsg').style.display = 'none';
+            calcPreview();
+        } catch (error) {
+            alert("【デバッグ情報】ホール表示処理でエラーが発生しました: " + error.message);
         }
-
-        document.getElementById('errorMsg').style.display = 'none';
-        calcPreview();
     }
 
     function calcPreview() {
-        let par = parseInt(document.getElementById('currentPar').value);
-        let b = [], s = [];
-        let isComplete = true;
-        
-        for(let j=1; j<=4; j++) {
-            b[j-1] = parseInt(document.getElementById(`b${j}_player`).value);
-            let scoreVal = document.getElementById(`b${j}_score`).value;
-            if(scoreVal === "") isComplete = false;
-            s[j-1] = parseInt(scoreVal);
-        }
+        try {
+            let par = parseInt(document.getElementById('currentPar').value, 10);
+            let b = [], s = [];
+            let isComplete = true;
+            
+            for(let j=1; j<=4; j++) {
+                b[j-1] = parseInt(document.getElementById(`b${j}_player`).value, 10);
+                let scoreVal = document.getElementById(`b${j}_score`).value;
+                if(scoreVal === "") {
+                    isComplete = false;
+                    s[j-1] = 0;
+                } else {
+                    s[j-1] = parseInt(scoreVal, 10);
+                }
+            }
 
-        let uniqueBatters = new Set(b);
-        if(uniqueBatters.size !== 4) {
-            document.getElementById('errorMsg').style.display = 'block';
-            resetPreviewDisplay();
-            return false;
-        } else {
-            document.getElementById('errorMsg').style.display = 'none';
-        }
+            let uniqueBatters = new Set(b);
+            if(uniqueBatters.size !== 4) {
+                document.getElementById('errorMsg').style.display = 'block';
+                resetPreviewDisplay();
+                return false;
+            } else {
+                document.getElementById('errorMsg').style.display = 'none';
+            }
 
-        if(!isComplete) {
-            resetPreviewDisplay();
-            return true; 
-        }
+            if(!isComplete) {
+                resetPreviewDisplay();
+                return true; 
+            }
 
-        let teamA_birdie = (s[0] <= par - 1) || (s[3] <= par - 1); 
-        let teamB_birdie = (s[1] <= par - 1) || (s[2] <= par - 1); 
+            let teamA_birdie = (s[0] <= par - 1) || (s[3] <= par - 1); 
+            let teamB_birdie = (s[1] <= par - 1) || (s[2] <= par - 1); 
 
-        let scoreA = getTeamScore(s[0], s[3], teamB_birdie);
-        let scoreB = getTeamScore(s[1], s[2], teamA_birdie);
+            let scoreA = getTeamScore(s[0], s[3], teamB_birdie);
+            let scoreB = getTeamScore(s[1], s[2], teamA_birdie);
 
-        document.getElementById('preview_tA').innerText = scoreA;
-        document.getElementById('preview_tB').innerText = scoreB;
-        document.getElementById('preview_carry').innerText = currentCarryMultiplier + 'x';
+            document.getElementById('preview_tA').textContent = String(scoreA);
+            document.getElementById('preview_tB').textContent = String(scoreB);
+            document.getElementById('preview_carry').textContent = currentCarryMultiplier + 'x';
 
-        let diff = Math.abs(scoreA - scoreB);
-        let cappedDiff = Math.min(diff, MAX_DIFF);
-        let pointsMoved = cappedDiff * currentCarryMultiplier;
-        
-        let pts = [0, 0, 0, 0];
-        if (scoreA < scoreB) {
-            pts[b[0]] += pointsMoved; pts[b[3]] += pointsMoved;
-            pts[b[1]] -= pointsMoved; pts[b[2]] -= pointsMoved;
-        } else if (scoreB < scoreA) {
-            pts[b[0]] -= pointsMoved; pts[b[3]] -= pointsMoved;
-            pts[b[1]] += pointsMoved; pts[b[2]] += pointsMoved;
-        }
-
-        let summaryText = "";
-        for(let p=0; p<4; p++) {
-            if(pts[p] !== 0) summaryText += `${players[p]}:${pts[p]>0?'+':''}${pts[p]}  `;
-        }
-        document.getElementById('preview_pts').innerText = summaryText || '同点引分 (次回へキャリー)';
-
-        return { scoreA, scoreB, pts, b, s, par }; 
-    }
-
-    function resetPreviewDisplay() {
-        document.getElementById('preview_tA').innerText = '-';
-        document.getElementById('preview_tB').innerText = '-';
-        docum
+            let diff = Math.abs(scoreA - scoreB);
+    
