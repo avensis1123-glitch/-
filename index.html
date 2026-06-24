@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>ラスベガス集計アプリ(ウィザード形式)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
     body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -144,6 +145,24 @@
         font-weight: bold;
         display: none;
     }
+
+    .result-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: center;
+        font-size: 0.85rem;
+    }
+    .result-table th, .result-table td {
+        border: 1px solid #ddd;
+        padding: 6px 4px;
+    }
+    .result-table th {
+        background-color: #2c3e50;
+        color: white;
+    }
+    .result-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
 </style>
 </head>
 <body>
@@ -261,11 +280,12 @@
 
     <div id="resultView" class="view-section">
         <div class="container">
-            <div class="card">
-                <div class="card-title">ラウンド終了！</div>
-                <p style="text-align: center; margin-bottom: 20px;">全18ホールの集計が完了しました。</p>
-                <button class="btn btn-info" id="downloadBtn">最終結果をCSVダウンロード</button>
+            <div class="card" id="captureArea" style="padding: 10px; background: white; border-radius: 8px;">
+                <div class="card-title" style="margin-bottom: 10px; font-size: 1.2rem;">ラウンド最終結果</div>
+                <div id="resultTableContainer"></div>
             </div>
+            <p style="text-align: center; margin-top: 15px; font-size: 0.9rem; color: #555;">全18ホールの集計が完了しました。</p>
+            <button class="btn btn-info" id="downloadBtn" style="margin-top: 10px;">結果をPNG画像でダウンロード</button>
         </div>
     </div>
 
@@ -283,92 +303,81 @@
     let currentCarryMultiplier = 1;
 
     document.addEventListener('DOMContentLoaded', function() {
-        try {
-            // スコア選択肢の生成（デフォルトを4に設定）
-            const scoreSelects = document.querySelectorAll('.score-select');
-            scoreSelects.forEach(sel => {
-                sel.innerHTML = '';
-                for(let i=1; i<=MAX_SCORE; i++) {
-                    let opt = document.createElement('option');
-                    opt.value = String(i);
-                    opt.textContent = i + '打';
-                    if(i === 4) opt.selected = true; // デフォルトを4にする
-                    sel.appendChild(opt);
-                }
-            });
+        // デフォルトを4にするため、空の選択肢を削除し1〜15を生成
+        const scoreSelects = document.querySelectorAll('.score-select');
+        scoreSelects.forEach(sel => {
+            sel.innerHTML = '';
+            for(let i=1; i<=MAX_SCORE; i++) {
+                let opt = document.createElement('option');
+                opt.value = String(i);
+                opt.textContent = i + '打';
+                sel.appendChild(opt);
+            }
+        });
 
-            // イベント登録
-            document.getElementById('startBtn').addEventListener('click', startGame);
-            document.getElementById('nextBtn').addEventListener('click', goToNextHole);
-            document.getElementById('backBtn').addEventListener('click', goBack);
-            document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('nextBtn').addEventListener('click', goToNextHole);
+        document.getElementById('backBtn').addEventListener('click', goBack);
+        document.getElementById('downloadBtn').addEventListener('click', downloadPNG);
 
-            const changeTriggers = [
-                'currentPar', 'b1_player', 'b1_score', 'b2_player', 'b2_score', 
-                'b3_player', 'b3_score', 'b4_player', 'b4_score'
-            ];
-            changeTriggers.forEach(id => {
-                let el = document.getElementById(id);
-                if(el) el.addEventListener('change', calcPreview);
-            });
-
-        } catch (error) {
-            console.error(error);
-        }
+        const changeTriggers = [
+            'currentPar', 'b1_player', 'b1_score', 'b2_player', 'b2_score', 
+            'b3_player', 'b3_score', 'b4_player', 'b4_score'
+        ];
+        changeTriggers.forEach(id => {
+            let el = document.getElementById(id);
+            if(el) el.addEventListener('change', calcPreview);
+        });
     });
 
     function startGame() {
-        try {
-            players = [
-                document.getElementById('nameA').value || 'プレイヤー1',
-                document.getElementById('nameB').value || 'プレイヤー2',
-                document.getElementById('nameC').value || 'プレイヤー3',
-                document.getElementById('nameD').value || 'プレイヤー4'
-            ];
+        players = [
+            document.getElementById('nameA').value || 'プレイヤー1',
+            document.getElementById('nameB').value || 'プレイヤー2',
+            document.getElementById('nameC').value || 'プレイヤー3',
+            document.getElementById('nameD').value || 'プレイヤー4'
+        ];
 
-            for(let i=0; i<4; i++) {
-                document.getElementById(`h-name${i}`).textContent = players[i].substring(0,4);
-            }
-
-            const playerSelects = [
-                document.getElementById('b1_player'), document.getElementById('b2_player'),
-                document.getElementById('b3_player'), document.getElementById('b4_player')
-            ];
-            playerSelects.forEach((sel, index) => {
-                sel.innerHTML = '';
-                for(let i=0; i<4; i++) {
-                    let opt = document.createElement('option');
-                    opt.value = String(i);
-                    opt.textContent = players[i];
-                    if(i === index) opt.selected = true; 
-                    sel.appendChild(opt);
-                }
-            });
-
-            let sHole = parseInt(document.getElementById('startHoleInput').value, 10);
-            holeSequence = [];
-            for(let i=0; i<HOLES; i++) {
-                let h = sHole + i;
-                if(h > 18) h -= 18;
-                holeSequence.push(h);
-            }
-
-            initialPars = {};
-            for(let i=1; i<=18; i++) {
-                let pEl = document.getElementById(`parHole${i}`);
-                initialPars[String(i)] = pEl ? pEl.value : "4";
-            }
-
-            roundData = [];
-            currentStep = 0;
-            currentCarryMultiplier = 1;
-            updateHeaderTotals();
-
-            switchView('gameView');
-            renderCurrentHole();
-        } catch (error) {
-            console.error(error);
+        for(let i=0; i<4; i++) {
+            document.getElementById(`h-name${i}`).textContent = players[i].substring(0,4);
         }
+
+        const playerSelects = [
+            document.getElementById('b1_player'), document.getElementById('b2_player'),
+            document.getElementById('b3_player'), document.getElementById('b4_player')
+        ];
+        playerSelects.forEach((sel, index) => {
+            sel.innerHTML = '';
+            for(let i=0; i<4; i++) {
+                let opt = document.createElement('option');
+                opt.value = String(i);
+                opt.textContent = players[i];
+                if(i === index) opt.selected = true; 
+                sel.appendChild(opt);
+            }
+        });
+
+        let sHole = parseInt(document.getElementById('startHoleInput').value, 10);
+        holeSequence = [];
+        for(let i=0; i<HOLES; i++) {
+            let h = sHole + i;
+            if(h > 18) h -= 18;
+            holeSequence.push(h);
+        }
+
+        initialPars = {};
+        for(let i=1; i<=18; i++) {
+            let pEl = document.getElementById(`parHole${i}`);
+            initialPars[String(i)] = pEl ? pEl.value : "4";
+        }
+
+        roundData = [];
+        currentStep = 0;
+        currentCarryMultiplier = 1;
+        updateHeaderTotals();
+
+        switchView('gameView');
+        renderCurrentHole();
     }
 
     function switchView(viewId) {
@@ -378,86 +387,82 @@
     }
 
     function renderCurrentHole() {
-        try {
-            let actualHole = holeSequence[currentStep];
-            document.getElementById('currentHoleLabel').textContent = `Hole ${actualHole} (${currentStep + 1}/18)`;
-            
-            document.getElementById('backBtn').style.display = (currentStep > 0) ? 'block' : 'none';
-            document.getElementById('nextBtn').textContent = (currentStep === 17) ? '結果を保存して終了する' : '結果を保存して次へ進む';
+        let actualHole = holeSequence[currentStep];
+        document.getElementById('currentHoleLabel').textContent = `Hole ${actualHole} (${currentStep + 1}/18)`;
+        
+        document.getElementById('backBtn').style.display = (currentStep > 0) ? 'block' : 'none';
+        document.getElementById('nextBtn').textContent = (currentStep === 17) ? '結果を保存して終了する' : '結果を保存して次へ進む';
 
-            if (roundData[currentStep]) {
-                let data = roundData[currentStep];
-                document.getElementById('currentPar').value = String(data.par);
-                for(let j=1; j<=4; j++) {
-                    document.getElementById(`b${j}_player`).value = String(data.batters[j-1]);
-                    document.getElementById(`b${j}_score`).value = String(data.scores[j-1]);
-                }
-            } else {
-                document.getElementById('currentPar').value = String(initialPars[String(actualHole)] || "4");
+        if (roundData[currentStep]) {
+            // 既に入力済みのホールに戻ってきた場合の復元
+            let data = roundData[currentStep];
+            document.getElementById('currentPar').value = String(data.par);
+            for(let j=1; j<=4; j++) {
+                document.getElementById(`b${j}_player`).value = String(data.batters[j-1]);
+                document.getElementById(`b${j}_score`).value = String(data.scores[j-1]);
+            }
+        } else {
+            // 新しいホール
+            document.getElementById('currentPar').value = String(initialPars[String(actualHole)] || "4");
 
-                let currentOrder = [0, 1, 2, 3]; 
-                if (currentStep > 0) {
-                    let prevData = roundData[currentStep - 1];
-                    currentOrder.sort((a, b) => {
-                        let idxA = prevData.batters.indexOf(a);
-                        let idxB = prevData.batters.indexOf(b);
-                        let scoreA = prevData.scores[idxA];
-                        let scoreB = prevData.scores[idxB];
-                        if (scoreA !== scoreB) return scoreA - scoreB;
-                        return idxA - idxB;
-                    });
-                }
-
-                for(let j=1; j<=4; j++) {
-                    document.getElementById(`b${j}_player`).value = String(currentOrder[j-1]);
-                    document.getElementById(`b${j}_score`).value = '4'; // 新規ホールの初期値を4に固定
-                }
+            let currentOrder = [0, 1, 2, 3]; 
+            if (currentStep > 0) {
+                // ここで直前のホール（currentStep - 1）の成績に基づいて打順を決定（即時反映）
+                let prevData = roundData[currentStep - 1];
+                currentOrder.sort((a, b) => {
+                    let idxA = prevData.batters.indexOf(a);
+                    let idxB = prevData.batters.indexOf(b);
+                    let scoreA = prevData.scores[idxA];
+                    let scoreB = prevData.scores[idxB];
+                    if (scoreA !== scoreB) return scoreA - scoreB;
+                    return idxA - idxB;
+                });
             }
 
-            document.getElementById('errorMsg').style.display = 'none';
-            calcPreview();
-        } catch (error) {
-            console.error(error);
+            for(let j=1; j<=4; j++) {
+                document.getElementById(`b${j}_player`).value = String(currentOrder[j-1]);
+                document.getElementById(`b${j}_score`).value = '4'; // デフォルトを4打に設定
+            }
         }
+
+        document.getElementById('errorMsg').style.display = 'none';
+        calcPreview();
     }
 
     function calcPreview() {
-        try {
-            let par = parseInt(document.getElementById('currentPar').value, 10);
-            let b = [], s = [];
-            let isComplete = true;
-            
-            for(let j=1; j<=4; j++) {
-                b[j-1] = parseInt(document.getElementById(`b${j}_player`).value, 10);
-                let scoreVal = document.getElementById(`b${j}_score`).value;
-                if(scoreVal === "") {
-                    isComplete = false;
-                    s[j-1] = 0;
-                } else {
-                    s[j-1] = parseInt(scoreVal, 10);
-                }
-            }
+        let par = parseInt(document.getElementById('currentPar').value, 10);
+        let b = [], s = [];
+        
+        for(let j=1; j<=4; j++) {
+            b[j-1] = parseInt(document.getElementById(`b${j}_player`).value, 10);
+            s[j-1] = parseInt(document.getElementById(`b${j}_score`).value, 10);
+        }
 
-            let uniqueBatters = new Set(b);
-            if(uniqueBatters.size !== 4) {
-                document.getElementById('errorMsg').style.display = 'block';
-                resetPreviewDisplay();
-                return false;
-            } else {
-                document.getElementById('errorMsg').style.display = 'none';
-            }
+        let uniqueBatters = new Set(b);
+        if(uniqueBatters.size !== 4) {
+            document.getElementById('errorMsg').style.display = 'block';
+            resetPreviewDisplay();
+            return null;
+        } else {
+            document.getElementById('errorMsg').style.display = 'none';
+        }
 
-            if(!isComplete) {
-                resetPreviewDisplay();
-                return true; 
-            }
+        // チームX(オナーと4th): b[0], b[3]
+        // チームY(2ndと3rd): b[1], b[2]
+        let tX_scores = [s[0], s[3]];
+        let tY_scores = [s[1], s[2]];
 
-            let teamA_birdie = (s[0] <= par - 1) || (s[3] <= par - 1); 
-            let teamB_birdie = (s[1] <= par - 1) || (s[2] <= par - 1); 
+        let tX_birdie = (tX_scores[0] < par) || (tX_scores[1] < par);
+        let tY_birdie = (tY_scores[0] < par) || (tY_scores[1] < par);
 
-            let scoreA = getTeamScore(s[0], s[3], teamB_birdie);
-            let scoreB = getTeamScore(s[1], s[2], teamA_birdie);
+        let calcVegas = (scores, reverse) => {
+            let min = Math.min(...scores);
+            let max = Math.max(...scores);
+            return reverse ? parseInt(String(max) + String(min), 10) : parseInt(String(min) + String(max), 10);
+        };
 
-            document.getElementById('preview_tA').textContent = String(scoreA);
-            document.getElementById('preview_tB').textContent = String(scoreB);
-            document.g
+        // 相手チームにのみバーディ（以下）がいれば点数反転
+        let tX_reverse = tY_birdie && !tX_birdie;
+        let tY_reverse = tX_birdie && !tY_birdie;
+
+        let tX_val = calcVegas(tX_scores, tX_reverse);
