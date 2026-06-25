@@ -116,13 +116,13 @@
         background-color: #111;
         color: #fff;
     }
-    /* 横幅はみ出し防止用の調整 */
+    /* 名前とスコアの比率を逆転 */
     .name-input { 
-        flex: 1; 
+        flex: 0 0 100px; 
         min-width: 0; 
     }
     .avg-input { 
-        flex: 0 0 65px; 
+        flex: 1; 
         text-align: center; 
         padding: 10px 5px; 
     }
@@ -272,22 +272,22 @@
                 <div class="input-group">
                     <label>1番</label>
                     <input type="text" id="name0" class="name-input" value="プレイヤー1">
-                    <input type="number" id="avg0" class="avg-input" value="90" title="平均スコア">
+                    <select id="avg0" class="avg-input" title="平均スコア"></select>
                 </div>
                 <div class="input-group">
                     <label>2番</label>
                     <input type="text" id="name1" class="name-input" value="プレイヤー2">
-                    <input type="number" id="avg1" class="avg-input" value="100" title="平均スコア">
+                    <select id="avg1" class="avg-input" title="平均スコア"></select>
                 </div>
                 <div class="input-group">
                     <label>3番</label>
                     <input type="text" id="name2" class="name-input" value="プレイヤー3">
-                    <input type="number" id="avg2" class="avg-input" value="110" title="平均スコア">
+                    <select id="avg2" class="avg-input" title="平均スコア"></select>
                 </div>
                 <div class="input-group">
                     <label>4番</label>
                     <input type="text" id="name3" class="name-input" value="プレイヤー4">
-                    <input type="number" id="avg3" class="avg-input" value="110" title="平均スコア">
+                    <select id="avg3" class="avg-input" title="平均スコア"></select>
                 </div>
                 
                 <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
@@ -383,7 +383,7 @@
 
 <script>
     const HOLES = 18;
-    const RATE = 50;
+    const RATE = 100; // レートを100円に変更
     const MAX_DIFF_NORMAL = 20;
     const MAX_DIFF_BIRDIE = 50; 
     const MAX_SCORE = 15;
@@ -407,6 +407,19 @@
             let div = document.createElement('div');
             div.innerHTML = `<span>H${i}:</span><select id="parHole${i}"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select>`;
             parContainer.appendChild(div);
+        }
+
+        // 申告スコアを70〜130の5刻みで生成
+        for (let j = 0; j < 4; j++) {
+            let avgSel = document.getElementById(`avg${j}`);
+            avgSel.innerHTML = '';
+            for (let i = 70; i <= 130; i += 5) {
+                let opt = document.createElement('option');
+                opt.value = String(i);
+                opt.textContent = i;
+                if (i === 100) opt.selected = true; // デフォルト100
+                avgSel.appendChild(opt);
+            }
         }
 
         const scoreSelects = document.querySelectorAll('.score-select');
