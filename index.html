@@ -102,7 +102,7 @@
         width: 100%;
     }
     .input-group label {
-        flex: 0 0 35px;
+        flex: 0 0 45px; /* ラベル幅を調整 */
         font-size: 0.85rem;
         color: #ccc;
         font-weight: bold;
@@ -139,9 +139,17 @@
         background: rgba(0, 0, 0, 0.5);
         padding: 8px;
         border-radius: 6px;
+    }
+    /* チームごとの枠色設定を追加 */
+    .score-row.team-x {
+        border: 1px solid #ff007f;
+        box-shadow: inset 0 0 8px rgba(255,0,127,0.2);
+    }
+    .score-row.team-y {
         border: 1px solid #00e5ff;
         box-shadow: inset 0 0 8px rgba(0,229,255,0.2);
     }
+
     .score-row label {
         flex: 0 0 45px;
         font-size: 0.85rem; 
@@ -263,22 +271,22 @@
                 </div>
 
                 <div class="input-group">
-                    <label>P1</label>
+                    <label>オナー</label>
                     <input type="text" id="name0" class="name-input" value="プレイヤー1">
                     <select id="avg0" class="avg-input" title="平均スコア"></select>
                 </div>
                 <div class="input-group">
-                    <label>P2</label>
+                    <label>2nd</label>
                     <input type="text" id="name1" class="name-input" value="プレイヤー2">
                     <select id="avg1" class="avg-input" title="平均スコア"></select>
                 </div>
                 <div class="input-group">
-                    <label>P3</label>
+                    <label>3rd</label>
                     <input type="text" id="name2" class="name-input" value="プレイヤー3">
                     <select id="avg2" class="avg-input" title="平均スコア"></select>
                 </div>
                 <div class="input-group">
-                    <label>P4</label>
+                    <label>4th</label>
                     <input type="text" id="name3" class="name-input" value="プレイヤー4">
                     <select id="avg3" class="avg-input" title="平均スコア"></select>
                 </div>
@@ -327,22 +335,22 @@
 
                 <div id="errorMsg" class="error-msg">打者が重複しています！異なる4名を選択してください。</div>
 
-                <div class="score-row">
+                <div class="score-row team-x">
                     <label>オナー<br><span style="font-size:0.7rem; font-weight:normal; color:#ff007f;">(ﾁｰﾑX)</span></label>
                     <select id="b1_player" class="player-select"></select>
                     <select id="b1_score" class="score-select"></select>
                 </div>
-                <div class="score-row">
+                <div class="score-row team-y">
                     <label>2nd<br><span style="font-size:0.7rem; font-weight:normal; color:#00e5ff;">(ﾁｰﾑY)</span></label>
                     <select id="b2_player" class="player-select"></select>
                     <select id="b2_score" class="score-select"></select>
                 </div>
-                <div class="score-row">
+                <div class="score-row team-y">
                     <label>3rd<br><span style="font-size:0.7rem; font-weight:normal; color:#00e5ff;">(ﾁｰﾑY)</span></label>
                     <select id="b3_player" class="player-select"></select>
                     <select id="b3_score" class="score-select"></select>
                 </div>
-                <div class="score-row">
+                <div class="score-row team-x">
                     <label>4th<br><span style="font-size:0.7rem; font-weight:normal; color:#ff007f;">(ﾁｰﾑX)</span></label>
                     <select id="b4_player" class="player-select"></select>
                     <select id="b4_score" class="score-select"></select>
@@ -380,7 +388,7 @@
 
 <script>
     const HOLES = 18;
-    const RATE = 50; // 50円
+    const RATE = 50; // レートを50円に変更
     const MAX_DIFF_NORMAL = 20;
     const MAX_DIFF_BIRDIE = 50; 
     const MAX_SCORE = 15;
