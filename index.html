@@ -6,6 +6,11 @@
 <title>ラスベガス集計アプリ(完全スクラッチ仕様)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
+    /* 全要素の横幅計算にpaddingとborderを含める（はみ出し防止） */
+    *, *::before, *::after {
+        box-sizing: border-box;
+    }
+
     body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         background: radial-gradient(circle at top, #2b1055 0%, #0b0115 100%);
@@ -53,6 +58,7 @@
         border: 1px solid #ff007f;
         margin-bottom: 10px;
         padding: 15px;
+        width: 100%;
     }
     .card-title {
         font-size: 1.1rem;
@@ -66,15 +72,39 @@
         color: #00e5ff;
         text-shadow: 0 0 5px #00e5ff;
     }
+    
+    .info-box {
+        background: rgba(0,0,0,0.5);
+        border: 1px solid #444;
+        border-radius: 6px;
+        padding: 10px;
+        margin-bottom: 15px;
+        font-size: 0.85rem;
+        color: #ccc;
+        line-height: 1.4;
+    }
+    .info-formula {
+        color: #ffd700;
+        font-weight: bold;
+        margin-top: 6px;
+        font-size: 0.95rem;
+        text-align: center;
+        background: rgba(255,215,0,0.1);
+        padding: 5px;
+        border-radius: 4px;
+        border: 1px dashed #ffd700;
+    }
+
     .input-group {
         display: flex;
         align-items: center;
         margin-bottom: 12px;
         gap: 5px;
+        width: 100%;
     }
     .input-group label {
-        flex: 0 0 50px;
-        font-size: 0.9rem;
+        flex: 0 0 35px;
+        font-size: 0.85rem;
         color: #ccc;
         font-weight: bold;
     }
@@ -86,8 +116,16 @@
         background-color: #111;
         color: #fff;
     }
-    .name-input { flex: 1; }
-    .avg-input { flex: 0 0 70px; text-align: center; }
+    /* 横幅はみ出し防止用の調整 */
+    .name-input { 
+        flex: 1; 
+        min-width: 0; 
+    }
+    .avg-input { 
+        flex: 0 0 65px; 
+        text-align: center; 
+        padding: 10px 5px; 
+    }
     
     select:focus, input:focus {
         outline: none;
@@ -97,11 +135,11 @@
     
     .score-row {
         display: flex;
-        gap: 12px;
+        gap: 10px;
         margin-bottom: 12px;
         align-items: center;
         background: rgba(0, 0, 0, 0.5);
-        padding: 8px 12px;
+        padding: 8px 10px;
         border-radius: 6px;
         border: 1px solid #444;
         transition: all 0.3s ease;
@@ -122,6 +160,9 @@
         color: #fff; 
         display: flex;
         flex-direction: column;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     .team-badge {
         font-size: 0.7rem;
@@ -132,10 +173,10 @@
     .team-y .team-badge { color: #00e5ff; }
     
     .score-row .score-select {
-        flex: 0 0 90px;
+        flex: 0 0 85px;
         text-align: center;
         font-size: 1.1rem;
-        padding: 8px;
+        padding: 8px 4px;
     }
     
     .hole-result {
@@ -219,7 +260,15 @@
         <div class="container">
             <div class="card" style="margin-top: 5px;">
                 <div class="card-title">CASINO SETUP</div>
-                <div style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px;">カートのバッグ順に名前と自己申告スコアを入力。申告スコアから自動で初期ハンデ（係数5）が設定されます。</div>
+                
+                <div class="info-box">
+                    スタートホールの打順に合わせて名前と自己申告スコアを入力してください。申告スコアをもとに初期ポイントが自動で付与されます。
+                    <div class="info-formula">
+                        (自分のスコア − 4人の平均) × 5
+                    </div>
+                    <div style="font-size: 0.7rem; color: #999; margin-top: 4px; text-align: center;">※端数調整により4人の合計は必ず±0になります</div>
+                </div>
+
                 <div class="input-group">
                     <label>1番</label>
                     <input type="text" id="name0" class="name-input" value="プレイヤー1">
@@ -244,7 +293,7 @@
                 <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
                 
                 <div class="input-group" style="margin-bottom: 8px;">
-                    <label style="flex: 0 0 90px;">開始ホール</label>
+                    <label style="flex: 0 0 75px;">開始ホール</label>
                     <select id="startHoleInput" style="flex:1;">
                         <option value="1">1番ホール (OUTスタート)</option>
                         <option value="10">10番ホール (INスタート)</option>
@@ -254,8 +303,7 @@
                 <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
                 <div style="font-size: 0.85rem; color: #aaa; margin-bottom: 5px; font-weight: bold;">各ホールのパー数設定</div>
                 <div id="parInputContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px;">
-                    <!-- JSで一括生成 -->
-                </div>
+                    </div>
                 
                 <button class="btn" id="startBtn" style="margin-top: 20px;">GAME START</button>
             </div>
@@ -495,7 +543,7 @@
         let tX_birdie = (tX_scores[0] < par) || (tX_scores[1] < par);
         let tY_birdie = (tY_scores[0] < par) || (tY_scores[1] < par);
 
-        // 指定通り加算バグを残す計算式
+        // 加算バグを残す計算式
         let calcVegas = (scores, reverse) => {
             let min = Math.min(...scores);
             let max = Math.max(...scores);
