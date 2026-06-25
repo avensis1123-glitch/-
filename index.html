@@ -80,16 +80,15 @@
         margin-bottom: 15px;
         font-size: 0.85rem;
         color: #ccc;
-        line-height: 1.4;
+        line-height: 1.5;
     }
     .info-formula {
         color: #ffd700;
-        font-weight: bold;
-        margin-top: 6px;
-        font-size: 0.9rem;
-        text-align: center;
+        margin-top: 10px;
+        font-size: 0.85rem;
+        text-align: left;
         background: rgba(255,215,0,0.1);
-        padding: 6px;
+        padding: 10px;
         border-radius: 4px;
         border: 1px dashed #ffd700;
     }
@@ -102,7 +101,7 @@
         width: 100%;
     }
     .input-group label {
-        flex: 0 0 45px; /* ラベル幅を調整 */
+        flex: 0 0 45px;
         font-size: 0.85rem;
         color: #ccc;
         font-weight: bold;
@@ -140,7 +139,6 @@
         padding: 8px;
         border-radius: 6px;
     }
-    /* チームごとの枠色設定を追加 */
     .score-row.team-x {
         border: 1px solid #ff007f;
         box-shadow: inset 0 0 8px rgba(255,0,127,0.2);
@@ -262,13 +260,25 @@
                 
                 <div class="info-box">
                     名前と自己申告スコア（70〜130）を入力してください。<br>
-                    1番スコアが良い人に重税を課し、2番手・3番手に再分配する特別ハンデが自動で計算されます。
+                    プレイヤー間の実力差を埋め、白熱した勝負ができるよう<strong style="color:#00e5ff;">フェアなハンデ（初期チップ）</strong>を自動算出します。<br>
+                    <span style="font-size: 0.75rem; color: #aaa;">※トッププレイヤーにはスコアに応じた特別補正（重税）を適用し、その差額を中位プレイヤーへ再分配することでゲームバランスを保ちます（完全ゼロサム）。</span>
                     <div class="info-formula">
-                        重税計算: (申告 − 平均) × (1 − 申告÷平均) × 50<br>
-                        ※差額は2番手(70%)と3番手(30%)へ分配
+                        <div style="margin-bottom: 6px; font-weight: bold; text-align: center; color:#fff;">【ハンデの算出方法】</div>
+                        <div style="margin-bottom: 4px;"><strong>① 基本チップ:</strong> <span style="color:#fff;">(申告スコア − 全員平均) × 係数(5または6)</span></div>
+                        <div style="margin-bottom: 4px;"><strong>② トップ補正:</strong> <span style="color:#fff;">(トップ申告 − 全員平均) × (1 − トップ申告 ÷ 全員平均) × (係数×10)</span></div>
+                        <div><strong>③ 再分配処理:</strong> <span style="color:#fff;">①と②の差額を 2番手(70%) と 3番手(30%) にプラス</span></div>
                     </div>
-                    <div style="font-size: 0.7rem; color: #999; margin-top: 4px; text-align: center;">基本ハンデ係数5 / 完全ゼロサム補正済</div>
                 </div>
+
+                <div class="input-group">
+                    <label style="flex: 0 0 75px; color:#00e5ff;">ハンデ係数</label>
+                    <select id="coefInput" style="flex:1;">
+                        <option value="5" selected>5</option>
+                        <option value="6">6</option>
+                    </select>
+                </div>
+                
+                <hr style="border: 0; border-top: 1px dashed #444; margin: 15px 0;">
 
                 <div class="input-group">
                     <label>オナー</label>
@@ -388,11 +398,10 @@
 
 <script>
     const HOLES = 18;
-    const RATE = 50; // レートを50円に変更
+    const RATE = 50; 
     const MAX_DIFF_NORMAL = 20;
     const MAX_DIFF_BIRDIE = 50; 
     const MAX_SCORE = 15;
-    const HANDICAP_COEF = 5;
 
     let players = [];
     let initialPts = [0, 0, 0, 0];
@@ -451,6 +460,10 @@
     function startGame() {
         players = [];
         let avgs = [];
+        
+        // 追加: 選択された係数を取得
+        let coef = parseInt(document.getElementById('coefInput').value, 10);
+
         for(let i=0; i<4; i++) {
             players.push(document.getElementById(`name${i}`).value || `Player${i+1}`);
             let avg = parseInt(document.getElementById(`avg${i}`).value, 10);
@@ -460,7 +473,8 @@
 
         // --- トップ重税＆中間再分配ロジック ---
         let totalAvg = avgs.reduce((a, b) => a + b, 0) / 4;
-        let basePts = avgs.map(a => (a - totalAvg) * HANDICAP_COEF);
+        // 変更: 固定係数(HANDICAP_COEF)を選択されたcoefに変更
+        let basePts = avgs.map(a => (a - totalAvg) * coef);
 
         let sortedIndices = [0, 1, 2, 3].sort((a, b) => avgs[a] - avgs[b]);
         let topIdx = sortedIndices[0];
@@ -469,8 +483,8 @@
         let fourthIdx = sortedIndices[3];
 
         let S = avgs[topIdx];
-        // トップの計算： (S - avg) * (1 - S/avg) * 50
-        let topNewPt = (S - totalAvg) * (1 - (S / totalAvg)) * 50; 
+        // 変更: トップの計算を (S - avg) * (1 - S/avg) * (coef * 10) に変更
+        let topNewPt = (S - totalAvg) * (1 - (S / totalAvg)) * (coef * 10); 
         let tax = basePts[topIdx] - topNewPt; // 重税で生まれた財源
 
         let ptsCalc = [...basePts];
