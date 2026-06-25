@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ラスベガス集計アプリ(完全スクラッチ仕様)</title>
+<title>ラスベガス集計アプリ(完全スクラッチ・打順ベース仕様)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-    /* 全要素の横幅計算にpaddingとborderを含める（はみ出し防止） */
     *, *::before, *::after {
         box-sizing: border-box;
     }
@@ -87,10 +86,10 @@
         color: #ffd700;
         font-weight: bold;
         margin-top: 6px;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         text-align: center;
         background: rgba(255,215,0,0.1);
-        padding: 5px;
+        padding: 6px;
         border-radius: 4px;
         border: 1px dashed #ffd700;
     }
@@ -116,7 +115,6 @@
         background-color: #111;
         color: #fff;
     }
-    /* 名前とスコアの比率を調整 (名前 > スコア) */
     .name-input { 
         flex: 1; 
         min-width: 0; 
@@ -139,39 +137,22 @@
         margin-bottom: 12px;
         align-items: center;
         background: rgba(0, 0, 0, 0.5);
-        padding: 8px 10px;
+        padding: 8px;
         border-radius: 6px;
-        border: 1px solid #444;
-        transition: all 0.3s ease;
+        border: 1px solid #00e5ff;
+        box-shadow: inset 0 0 8px rgba(0,229,255,0.2);
     }
-    .score-row.team-x {
-        border-color: #ff007f;
-        box-shadow: inset 0 0 10px rgba(255,0,127,0.2);
-    }
-    .score-row.team-y {
-        border-color: #00e5ff;
-        box-shadow: inset 0 0 10px rgba(0,229,255,0.2);
-    }
-    
-    .player-label {
-        flex: 1;
-        font-size: 1rem; 
+    .score-row label {
+        flex: 0 0 45px;
+        font-size: 0.85rem; 
         font-weight: bold;
         color: #fff; 
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        text-align: center;
     }
-    .team-badge {
-        font-size: 0.7rem;
-        font-weight: normal;
-        margin-top: 2px;
+    .score-row .player-select {
+        flex: 1;
+        min-width: 0;
     }
-    .team-x .team-badge { color: #ff007f; }
-    .team-y .team-badge { color: #00e5ff; }
-    
     .score-row .score-select {
         flex: 0 0 85px;
         text-align: center;
@@ -226,6 +207,16 @@
         font-size: 1rem; 
     }
 
+    .error-msg {
+        color: #ff1744;
+        font-size: 0.85rem;
+        text-align: center;
+        margin-bottom: 10px;
+        font-weight: bold;
+        text-shadow: 0 0 5px #ff1744;
+        display: none;
+    }
+
     .result-table {
         width: 100%;
         border-collapse: collapse;
@@ -262,30 +253,32 @@
                 <div class="card-title">CASINO SETUP</div>
                 
                 <div class="info-box">
-                    スタートホールの打順に合わせて名前と自己申告スコアを入力してください。申告スコアをもとに初期ポイントが自動で付与されます。
+                    名前と自己申告スコア（70〜130）を入力してください。<br>
+                    1番スコアが良い人に重税を課し、2番手・3番手に再分配する特別ハンデが自動で計算されます。
                     <div class="info-formula">
-                        (自分のスコア − 4人の平均) × 5
+                        重税計算: (申告 − 平均) × (1 − 申告÷平均) × 50<br>
+                        ※差額は2番手(70%)と3番手(30%)へ分配
                     </div>
-                    <div style="font-size: 0.7rem; color: #999; margin-top: 4px; text-align: center;">※端数調整により4人の合計は必ず±0になります</div>
+                    <div style="font-size: 0.7rem; color: #999; margin-top: 4px; text-align: center;">基本ハンデ係数5 / 完全ゼロサム補正済</div>
                 </div>
 
                 <div class="input-group">
-                    <label>1番</label>
+                    <label>P1</label>
                     <input type="text" id="name0" class="name-input" value="プレイヤー1">
                     <select id="avg0" class="avg-input" title="平均スコア"></select>
                 </div>
                 <div class="input-group">
-                    <label>2番</label>
+                    <label>P2</label>
                     <input type="text" id="name1" class="name-input" value="プレイヤー2">
                     <select id="avg1" class="avg-input" title="平均スコア"></select>
                 </div>
                 <div class="input-group">
-                    <label>3番</label>
+                    <label>P3</label>
                     <input type="text" id="name2" class="name-input" value="プレイヤー3">
                     <select id="avg2" class="avg-input" title="平均スコア"></select>
                 </div>
                 <div class="input-group">
-                    <label>4番</label>
+                    <label>P4</label>
                     <input type="text" id="name3" class="name-input" value="プレイヤー4">
                     <select id="avg3" class="avg-input" title="平均スコア"></select>
                 </div>
@@ -331,30 +324,34 @@
                         </select>
                     </span>
                 </div>
-                
-                <div style="font-size:0.8rem; color:#aaa; margin-bottom:10px; text-align:center;" id="rotationInfo"></div>
 
-                <div class="score-row" id="row0">
-                    <div class="player-label"><span id="lbl_name0">Player1</span><span class="team-badge" id="lbl_team0"></span></div>
-                    <select id="score0" class="score-select"></select>
+                <div id="errorMsg" class="error-msg">打者が重複しています！異なる4名を選択してください。</div>
+
+                <div class="score-row">
+                    <label>オナー<br><span style="font-size:0.7rem; font-weight:normal; color:#ff007f;">(ﾁｰﾑX)</span></label>
+                    <select id="b1_player" class="player-select"></select>
+                    <select id="b1_score" class="score-select"></select>
                 </div>
-                <div class="score-row" id="row1">
-                    <div class="player-label"><span id="lbl_name1">Player2</span><span class="team-badge" id="lbl_team1"></span></div>
-                    <select id="score1" class="score-select"></select>
+                <div class="score-row">
+                    <label>2nd<br><span style="font-size:0.7rem; font-weight:normal; color:#00e5ff;">(ﾁｰﾑY)</span></label>
+                    <select id="b2_player" class="player-select"></select>
+                    <select id="b2_score" class="score-select"></select>
                 </div>
-                <div class="score-row" id="row2">
-                    <div class="player-label"><span id="lbl_name2">Player3</span><span class="team-badge" id="lbl_team2"></span></div>
-                    <select id="score2" class="score-select"></select>
+                <div class="score-row">
+                    <label>3rd<br><span style="font-size:0.7rem; font-weight:normal; color:#00e5ff;">(ﾁｰﾑY)</span></label>
+                    <select id="b3_player" class="player-select"></select>
+                    <select id="b3_score" class="score-select"></select>
                 </div>
-                <div class="score-row" id="row3">
-                    <div class="player-label"><span id="lbl_name3">Player4</span><span class="team-badge" id="lbl_team3"></span></div>
-                    <select id="score3" class="score-select"></select>
+                <div class="score-row">
+                    <label>4th<br><span style="font-size:0.7rem; font-weight:normal; color:#ff007f;">(ﾁｰﾑX)</span></label>
+                    <select id="b4_player" class="player-select"></select>
+                    <select id="b4_score" class="score-select"></select>
                 </div>
 
                 <div class="hole-result">
                     <div class="result-row">
-                        <span style="color:#ff007f; text-shadow: 0 0 3px #ff007f;">チームX: <strong id="preview_tX">-</strong></span>
-                        <span style="color:#00e5ff; text-shadow: 0 0 3px #00e5ff;">チームY: <strong id="preview_tY">-</strong></span>
+                        <span style="color:#ff007f; text-shadow: 0 0 3px #ff007f;">チームX(1&4): <strong id="preview_tX">-</strong></span>
+                        <span style="color:#00e5ff; text-shadow: 0 0 3px #00e5ff;">チームY(2&3): <strong id="preview_tY">-</strong></span>
                     </div>
                     <div class="result-row" style="margin-top: 5px;">
                         <span style="font-weight:bold; color:#fff;">発生キャリー: <span id="preview_carry" style="color:#ffd700; text-shadow: 0 0 5px #ffd700; font-size:1.2rem;">1x</span></span>
@@ -383,7 +380,7 @@
 
 <script>
     const HOLES = 18;
-    const RATE = 50; // レート50円
+    const RATE = 50; // 50円
     const MAX_DIFF_NORMAL = 20;
     const MAX_DIFF_BIRDIE = 50; 
     const MAX_SCORE = 15;
@@ -396,12 +393,8 @@
     let initialPars = {}; 
     let roundData = []; 
     let currentCarryMultiplier = 1;
-    
-    let tX_indices = [];
-    let tY_indices = [];
 
     (function initApp() {
-        // Setup Par Inputs dynamically
         const parContainer = document.getElementById('parInputContainer');
         for(let i=1; i<=18; i++) {
             let div = document.createElement('div');
@@ -409,7 +402,6 @@
             parContainer.appendChild(div);
         }
 
-        // 申告スコアを70〜130の5刻みで生成
         for (let j = 0; j < 4; j++) {
             let avgSel = document.getElementById(`avg${j}`);
             avgSel.innerHTML = '';
@@ -417,7 +409,7 @@
                 let opt = document.createElement('option');
                 opt.value = String(i);
                 opt.textContent = i;
-                if (i === 100) opt.selected = true; // デフォルト100
+                if (i === 100) opt.selected = true; 
                 avgSel.appendChild(opt);
             }
         }
@@ -438,7 +430,10 @@
         document.getElementById('backBtn').addEventListener('click', goBack);
         document.getElementById('downloadBtn').addEventListener('click', downloadPNG);
 
-        const changeTriggers = ['currentPar', 'score0', 'score1', 'score2', 'score3'];
+        const changeTriggers = [
+            'currentPar', 'b1_player', 'b1_score', 'b2_player', 'b2_score',
+            'b3_player', 'b3_score', 'b4_player', 'b4_score'
+        ];
         changeTriggers.forEach(id => {
             let el = document.getElementById(id);
             if(el) el.addEventListener('change', calcPreview);
@@ -453,15 +448,54 @@
             let avg = parseInt(document.getElementById(`avg${i}`).value, 10);
             avgs.push(isNaN(avg) ? 100 : avg);
             document.getElementById(`h-name${i}`).textContent = players[i].substring(0,4);
-            document.getElementById(`lbl_name${i}`).textContent = players[i];
         }
 
-        // ハンデの自動算出 (係数5の完全ゼロサム)
+        // --- トップ重税＆中間再分配ロジック ---
         let totalAvg = avgs.reduce((a, b) => a + b, 0) / 4;
-        let ptsCalc = avgs.map(a => Math.round((a - totalAvg) * HANDICAP_COEF));
-        let sum3 = ptsCalc[0] + ptsCalc[1] + ptsCalc[2];
-        ptsCalc[3] = -sum3; // 端数調整で確実にゼロにする
+        let basePts = avgs.map(a => (a - totalAvg) * HANDICAP_COEF);
+
+        let sortedIndices = [0, 1, 2, 3].sort((a, b) => avgs[a] - avgs[b]);
+        let topIdx = sortedIndices[0];
+        let secondIdx = sortedIndices[1];
+        let thirdIdx = sortedIndices[2];
+        let fourthIdx = sortedIndices[3];
+
+        let S = avgs[topIdx];
+        // トップの計算： (S - avg) * (1 - S/avg) * 50
+        let topNewPt = (S - totalAvg) * (1 - (S / totalAvg)) * 50; 
+        let tax = basePts[topIdx] - topNewPt; // 重税で生まれた財源
+
+        let ptsCalc = [...basePts];
+        ptsCalc[topIdx] = topNewPt;
+        
+        if (tax > 0) {
+            ptsCalc[secondIdx] += tax * 0.7; // 2番手に70%
+            ptsCalc[thirdIdx] += tax * 0.3;  // 3番手に30%
+        }
+
+        // 端数調整（完全ゼロサム）
+        ptsCalc[topIdx] = Math.round(ptsCalc[topIdx]);
+        ptsCalc[secondIdx] = Math.round(ptsCalc[secondIdx]);
+        ptsCalc[thirdIdx] = Math.round(ptsCalc[thirdIdx]);
+        ptsCalc[fourthIdx] = -(ptsCalc[topIdx] + ptsCalc[secondIdx] + ptsCalc[thirdIdx]);
+
         initialPts = ptsCalc;
+        // -------------------------------------
+
+        const playerSelects = [
+            document.getElementById('b1_player'), document.getElementById('b2_player'),
+            document.getElementById('b3_player'), document.getElementById('b4_player')
+        ];
+        playerSelects.forEach((sel, index) => {
+            sel.innerHTML = '';
+            for(let i=0; i<4; i++) {
+                let opt = document.createElement('option');
+                opt.value = String(i);
+                opt.textContent = players[i];
+                if(i === index) opt.selected = true; 
+                sel.appendChild(opt);
+            }
+        });
 
         let sHole = parseInt(document.getElementById('startHoleInput').value, 10);
         holeSequence = [];
@@ -499,64 +533,63 @@
         document.getElementById('backBtn').style.display = (currentStep > 0) ? 'block' : 'none';
         document.getElementById('nextBtn').textContent = (currentStep === 17) ? 'SAVE & FINISH (終了)' : 'SAVE & NEXT';
 
-        // 3ホールローテーションのチーム分け判定
-        let hMod = actualHole % 3;
-        if (hMod === 1) {
-            tX_indices = [0, 1]; tY_indices = [2, 3];
-            document.getElementById('rotationInfo').textContent = "ローテーション: 1番・2番 vs 3番・4番";
-        } else if (hMod === 2) {
-            tX_indices = [0, 2]; tY_indices = [1, 3];
-            document.getElementById('rotationInfo').textContent = "ローテーション: 1番・3番 vs 2番・4番";
-        } else {
-            tX_indices = [0, 3]; tY_indices = [1, 2];
-            document.getElementById('rotationInfo').textContent = "ローテーション: 1番・4番 vs 2番・3番";
-        }
-
-        // UIのチームカラーを更新
-        for(let i=0; i<4; i++) {
-            let row = document.getElementById(`row${i}`);
-            let badge = document.getElementById(`lbl_team${i}`);
-            row.classList.remove('team-x', 'team-y');
-            if(tX_indices.includes(i)) {
-                row.classList.add('team-x');
-                badge.textContent = "(チームX)";
-            } else {
-                row.classList.add('team-y');
-                badge.textContent = "(チームY)";
-            }
-        }
-
-        // スコアとパーの復元/初期化
         if (roundData[currentStep]) {
             let data = roundData[currentStep];
             document.getElementById('currentPar').value = String(data.par);
-            for(let j=0; j<4; j++) {
-                document.getElementById(`score${j}`).value = String(data.scores[j]);
+            for(let j=1; j<=4; j++) {
+                document.getElementById(`b${j}_player`).value = String(data.batters[j-1]);
+                document.getElementById(`b${j}_score`).value = String(data.scores[j-1]);
             }
         } else {
             document.getElementById('currentPar').value = String(initialPars[String(actualHole)] || "4");
-            for(let j=0; j<4; j++) {
-                document.getElementById(`score${j}`).value = '4';
+
+            let currentOrder = [0, 1, 2, 3]; 
+            if (currentStep > 0) {
+                let prevData = roundData[currentStep - 1];
+                currentOrder.sort((a, b) => {
+                    let idxA = prevData.batters.indexOf(a);
+                    let idxB = prevData.batters.indexOf(b);
+                    let scoreA = prevData.scores[idxA];
+                    let scoreB = prevData.scores[idxB];
+                    if (scoreA !== scoreB) return scoreA - scoreB;
+                    return idxA - idxB;
+                });
+            }
+
+            for(let j=1; j<=4; j++) {
+                document.getElementById(`b${j}_player`).value = String(currentOrder[j-1]);
+                document.getElementById(`b${j}_score`).value = '4';
             }
         }
 
+        document.getElementById('errorMsg').style.display = 'none';
         calcPreview();
     }
 
     function calcPreview() {
         let par = parseInt(document.getElementById('currentPar').value, 10);
-        let s = [];
-        for(let j=0; j<4; j++) {
-            s[j] = parseInt(document.getElementById(`score${j}`).value, 10);
+        let b = [], s = [];
+        
+        for(let j=1; j<=4; j++) {
+            b[j-1] = parseInt(document.getElementById(`b${j}_player`).value, 10);
+            s[j-1] = parseInt(document.getElementById(`b${j}_score`).value, 10);
         }
 
-        let tX_scores = [s[tX_indices[0]], s[tX_indices[1]]];
-        let tY_scores = [s[tY_indices[0]], s[tY_indices[1]]];
+        let uniqueBatters = new Set(b);
+        if(uniqueBatters.size !== 4) {
+            document.getElementById('errorMsg').style.display = 'block';
+            resetPreviewDisplay();
+            return null;
+        } else {
+            document.getElementById('errorMsg').style.display = 'none';
+        }
+
+        let tX_scores = [s[0], s[3]];
+        let tY_scores = [s[1], s[2]];
 
         let tX_birdie = (tX_scores[0] < par) || (tX_scores[1] < par);
         let tY_birdie = (tY_scores[0] < par) || (tY_scores[1] < par);
 
-        // 加算バグを残す計算式
         let calcVegas = (scores, reverse) => {
             let min = Math.min(...scores);
             let max = Math.max(...scores);
@@ -593,18 +626,17 @@
         let move = [0, 0, 0, 0];
         if (!isTie) {
             if (tX_val < tY_val) {
-                // Team X Wins
-                move[tX_indices[0]] = pts; move[tX_indices[1]] = pts;
-                move[tY_indices[0]] = -pts; move[tY_indices[1]] = -pts;
+                move[b[0]] = pts; move[b[3]] = pts;
+                move[b[1]] = -pts; move[b[2]] = -pts;
             } else {
-                // Team Y Wins
-                move[tX_indices[0]] = -pts; move[tX_indices[1]] = -pts;
-                move[tY_indices[0]] = pts; move[tY_indices[1]] = pts;
+                move[b[0]] = -pts; move[b[3]] = -pts;
+                move[b[1]] = pts; move[b[2]] = pts;
             }
         }
 
         return {
             par: par,
+            batters: b,
             scores: s,
             tX_val: tX_val,
             tY_val: tY_val,
@@ -614,8 +646,16 @@
         };
     }
 
+    function resetPreviewDisplay() {
+        document.getElementById('preview_tX').textContent = '-';
+        document.getElementById('preview_tY').textContent = '-';
+        document.getElementById('preview_pts').textContent = '-';
+    }
+
     function goToNextHole() {
         let result = calcPreview();
+        if(!result) return;
+
         roundData[currentStep] = result;
 
         if (result.isTie) {
@@ -698,7 +738,8 @@
             let hNum = holeSequence[i];
             html += `<tr><td>${hNum}</td><td>${d.par}</td>`;
             for(let p=0; p<4; p++) {
-                let score = d.scores[p];
+                let bIndex = d.batters.indexOf(p);
+                let score = d.scores[bIndex];
                 let move = d.move[p];
                 let moveStr = move > 0 ? `+${move}` : (move === 0 ? '±0' : String(move));
                 let color = move > 0 ? '#00e5ff' : (move < 0 ? '#ff1744' : '#aaaaaa');
