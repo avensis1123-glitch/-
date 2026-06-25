@@ -261,12 +261,12 @@
                 <div class="info-box">
                     名前と自己申告スコア（70〜130）を入力してください。<br>
                     プレイヤー間の実力差を埋め、白熱した勝負ができるよう<strong style="color:#00e5ff;">フェアなハンデ（初期チップ）</strong>を自動算出します。<br>
-                    <span style="font-size: 0.75rem; color: #aaa;">※トッププレイヤーにはスコアに応じた特別補正（重税）を適用し、その差額を中位プレイヤーへ再分配することでゲームバランスを保ちます（完全ゼロサム）。</span>
+                    <span style="font-size: 0.75rem; color: #aaa;">※トッププレイヤーにはスコアに応じた特別補正を適用し、その差額を中位プレイヤーへ再分配することでゲームバランスを保ちます（完全ゼロサム）。</span>
                     <div class="info-formula">
                         <div style="margin-bottom: 6px; font-weight: bold; text-align: center; color:#fff;">【ハンデの算出方法】</div>
                         <div style="margin-bottom: 4px;"><strong>① 基本チップ:</strong> <span style="color:#fff;">(申告スコア − 全員平均) × 係数(5または6)</span></div>
                         <div style="margin-bottom: 4px;"><strong>② トップ補正:</strong> <span style="color:#fff;">(トップ申告 − 全員平均) × (1 − トップ申告 ÷ 全員平均) × (係数×10)</span></div>
-                        <div><strong>③ 再分配処理:</strong> <span style="color:#fff;">①と②の差額を 2番手(70%) と 3番手(30%) にプラス</span></div>
+                        <div><strong>③ 再分配処理:</strong> <span style="color:#fff;">トップからの徴収分を 2番手(70%) と 3番手(30%) に分配（同スコア時は分配枠を合算して等分）</span></div>
                     </div>
                 </div>
 
@@ -460,8 +460,6 @@
     function startGame() {
         players = [];
         let avgs = [];
-        
-        // 追加: 選択された係数を取得
         let coef = parseInt(document.getElementById('coefInput').value, 10);
 
         for(let i=0; i<4; i++) {
@@ -471,37 +469,71 @@
             document.getElementById(`h-name${i}`).textContent = players[i].substring(0,4);
         }
 
-        // --- トップ重税＆中間再分配ロジック ---
+        // --- トップ補正＆分配ロジック（タイ対応版） ---
         let totalAvg = avgs.reduce((a, b) => a + b, 0) / 4;
-        // 変更: 固定係数(HANDICAP_COEF)を選択されたcoefに変更
         let basePts = avgs.map(a => (a - totalAvg) * coef);
 
-        let sortedIndices = [0, 1, 2, 3].sort((a, b) => avgs[a] - avgs[b]);
-        let topIdx = sortedIndices[0];
-        let secondIdx = sortedIndices[1];
-        let thirdIdx = sortedIndices[2];
-        let fourthIdx = sortedIndices[3];
+        // プレイヤーをID付きでスコア順に並び替え
+        let sortedPlayers = avgs.map((avg, id) => ({ id, avg, basePt: basePts[id] }));
+        sortedPlayers.sort((a, b) => a.avg - b.avg);
 
-        let S = avgs[topIdx];
-        // 変更: トップの計算を (S - avg) * (1 - S/avg) * (coef * 10) に変更
-        let topNewPt = (S - totalAvg) * (1 - (S / totalAvg)) * (coef * 10); 
-        let tax = basePts[topIdx] - topNewPt; // 重税で生まれた財源
+        // トップグループ（1位タイ）と、分配を受けるグループを分ける
+        let topAvg = sortedPlayers[0].avg;
+        let topGroup = sortedPlayers.filter(p => p.avg === topAvg);
+        let receivers = sortedPlayers.filter(p => p.avg !== topAvg);
+        let N_top = topGroup.length;
 
-        let ptsCalc = [...basePts];
-        ptsCalc[topIdx] = topNewPt;
+        // トップの補正計算（1人が単独トップだった場合の総徴収額を算出）
+        let topNewPt = (topAvg - totalAvg) * (1 - (topAvg / totalAvg)) * (coef * 10);
+        let tax = topGroup[0].basePt - topNewPt; 
+        if (tax < 0) tax = 0; // マイナスの場合は徴収なし
+
+        let ptsCalc = [0, 0, 0, 0];
         
-        if (tax > 0) {
-            ptsCalc[secondIdx] += tax * 0.7; // 2番手に70%
-            ptsCalc[thirdIdx] += tax * 0.3;  // 3番手に30%
+        // トップグループ：総徴収額を人数で等分して負担
+        let taxPerTop = tax / N_top;
+        for (let p of topGroup) {
+            ptsCalc[p.id] = p.basePt - taxPerTop;
         }
 
-        // 端数調整（完全ゼロサム）
-        ptsCalc[topIdx] = Math.round(ptsCalc[topIdx]);
-        ptsCalc[secondIdx] = Math.round(ptsCalc[secondIdx]);
-        ptsCalc[thirdIdx] = Math.round(ptsCalc[thirdIdx]);
-        ptsCalc[fourthIdx] = -(ptsCalc[topIdx] + ptsCalc[secondIdx] + ptsCalc[thirdIdx]);
+        // 分配グループ：残りのプレイヤーで徴収分を分配
+        let R = receivers.length;
+        if (R > 0) {
+            // 人数に応じた分配枠の設定（2位:70%, 3位:30% をベースに、人数が足りない場合は残りを引き継ぐ）
+            let shares = [];
+            if (R === 3) shares = [0.7, 0.3, 0.0];
+            else if (R === 2) shares = [0.7, 0.3];
+            else if (R === 1) shares = [1.0];
 
-        initialPts = ptsCalc;
+            // スコアごとにグループ化して、分配枠を合算
+            let groups = {};
+            for (let i = 0; i < R; i++) {
+                let s = receivers[i].avg;
+                if (!groups[s]) groups[s] = { count: 0, totalShare: 0, members: [] };
+                groups[s].count++;
+                groups[s].totalShare += shares[i];
+                groups[s].members.push(receivers[i].id);
+            }
+
+            // 合算した分配枠をグループの人数で等分して付与
+            for (let s in groups) {
+                let g = groups[s];
+                let sharePerPerson = g.totalShare / g.count;
+                for (let id of g.members) {
+                    ptsCalc[id] = basePts[id] + tax * sharePerPerson;
+                }
+            }
+        }
+
+        // 端数調整（完全ゼロサム維持）
+        let intPts = ptsCalc.map(p => Math.round(p));
+        let sum = intPts.reduce((a, b) => a + b, 0);
+        if (sum !== 0) {
+            // 一番スコアの悪いプレイヤー（ソートの最後尾）で誤差を相殺
+            intPts[sortedPlayers[3].id] -= sum;
+        }
+
+        initialPts = intPts;
         // -------------------------------------
 
         const playerSelects = [
