@@ -116,13 +116,13 @@
         background-color: #111;
         color: #fff;
     }
-    /* 名前とスコアの比率を逆転 */
+    /* 名前とスコアの比率を調整 (名前 > スコア) */
     .name-input { 
-        flex: 0 0 100px; 
+        flex: 1; 
         min-width: 0; 
     }
     .avg-input { 
-        flex: 1; 
+        flex: 0 0 85px; 
         text-align: center; 
         padding: 10px 5px; 
     }
@@ -383,7 +383,7 @@
 
 <script>
     const HOLES = 18;
-    const RATE = 100; // レートを100円に変更
+    const RATE = 100; // レート100円
     const MAX_DIFF_NORMAL = 20;
     const MAX_DIFF_BIRDIE = 50; 
     const MAX_SCORE = 15;
