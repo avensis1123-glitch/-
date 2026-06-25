@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ラスベガス集計アプリ(ウィザード形式)</title>
+<title>ラスベガス集計アプリ(完全スクラッチ仕様)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
     body {
@@ -70,14 +70,15 @@
         display: flex;
         align-items: center;
         margin-bottom: 12px;
+        gap: 5px;
     }
     .input-group label {
-        flex: 0 0 90px;
+        flex: 0 0 50px;
         font-size: 0.9rem;
         color: #ccc;
+        font-weight: bold;
     }
     select, input[type="text"], input[type="number"] {
-        flex: 1;
         padding: 10px;
         border: 1px solid #555;
         border-radius: 4px;
@@ -85,6 +86,9 @@
         background-color: #111;
         color: #fff;
     }
+    .name-input { flex: 1; }
+    .avg-input { flex: 0 0 70px; text-align: center; }
+    
     select:focus, input:focus {
         outline: none;
         border-color: #00e5ff;
@@ -93,28 +97,45 @@
     
     .score-row {
         display: flex;
-        gap: 8px;
+        gap: 12px;
         margin-bottom: 12px;
         align-items: center;
         background: rgba(0, 0, 0, 0.5);
-        padding: 8px;
+        padding: 8px 12px;
         border-radius: 6px;
-        border: 1px solid #00e5ff;
-        box-shadow: inset 0 0 8px rgba(0,229,255,0.2);
+        border: 1px solid #444;
+        transition: all 0.3s ease;
     }
-    .score-row label {
-        font-size: 0.85rem; 
+    .score-row.team-x {
+        border-color: #ff007f;
+        box-shadow: inset 0 0 10px rgba(255,0,127,0.2);
+    }
+    .score-row.team-y {
+        border-color: #00e5ff;
+        box-shadow: inset 0 0 10px rgba(0,229,255,0.2);
+    }
+    
+    .player-label {
+        flex: 1;
+        font-size: 1rem; 
         font-weight: bold;
         color: #fff; 
-        width: 45px;
-        text-align: center;
+        display: flex;
+        flex-direction: column;
     }
-    .score-row select {
-        flex: 1;
+    .team-badge {
+        font-size: 0.7rem;
+        font-weight: normal;
+        margin-top: 2px;
     }
+    .team-x .team-badge { color: #ff007f; }
+    .team-y .team-badge { color: #00e5ff; }
+    
     .score-row .score-select {
-        flex: 0 0 70px;
+        flex: 0 0 90px;
         text-align: center;
+        font-size: 1.1rem;
+        padding: 8px;
     }
     
     .hole-result {
@@ -164,16 +185,6 @@
         font-size: 1rem; 
     }
 
-    .error-msg {
-        color: #ff1744;
-        font-size: 0.85rem;
-        text-align: center;
-        margin-bottom: 10px;
-        font-weight: bold;
-        text-shadow: 0 0 5px #ff1744;
-        display: none;
-    }
-
     .result-table {
         width: 100%;
         border-collapse: collapse;
@@ -182,20 +193,17 @@
     }
     .result-table th, .result-table td {
         border: 1px solid #444;
-        padding: 1px 1px;
-        line-height: 1.05;
+        padding: 2px 1px;
+        line-height: 1.1;
         color: #fff;
     }
     .result-table th {
         background-color: #1a0b2e;
         color: #ffd700;
-        padding: 3px 1px;
+        padding: 4px 1px;
     }
     .result-table tr:nth-child(even) td {
         background-color: rgba(255,255,255,0.05);
-    }
-    .result-table tr:nth-child(odd) td {
-        background-color: transparent;
     }
     
     #captureArea {
@@ -211,51 +219,52 @@
         <div class="container">
             <div class="card" style="margin-top: 5px;">
                 <div class="card-title">CASINO SETUP</div>
-                <div class="input-group"><label>オナー</label><input type="text" id="nameA" value="プレイヤー1"></div>
-                <div class="input-group"><label>2nd</label><input type="text" id="nameB" value="プレイヤー2"></div>
-                <div class="input-group"><label>3rd</label><input type="text" id="nameC" value="プレイヤー3"></div>
-                <div class="input-group"><label>4th</label><input type="text" id="nameD" value="プレイヤー4"></div>
-                <hr style="border: 0; border-top: 1px solid #444; margin: 10px 0;">
+                <div style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px;">カートのバッグ順に名前と自己申告スコアを入力。申告スコアから自動で初期ハンデ（係数5）が設定されます。</div>
+                <div class="input-group">
+                    <label>1番</label>
+                    <input type="text" id="name0" class="name-input" value="プレイヤー1">
+                    <input type="number" id="avg0" class="avg-input" value="90" title="平均スコア">
+                </div>
+                <div class="input-group">
+                    <label>2番</label>
+                    <input type="text" id="name1" class="name-input" value="プレイヤー2">
+                    <input type="number" id="avg1" class="avg-input" value="100" title="平均スコア">
+                </div>
+                <div class="input-group">
+                    <label>3番</label>
+                    <input type="text" id="name2" class="name-input" value="プレイヤー3">
+                    <input type="number" id="avg2" class="avg-input" value="110" title="平均スコア">
+                </div>
+                <div class="input-group">
+                    <label>4番</label>
+                    <input type="text" id="name3" class="name-input" value="プレイヤー4">
+                    <input type="number" id="avg3" class="avg-input" value="110" title="平均スコア">
+                </div>
+                
+                <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
                 
                 <div class="input-group" style="margin-bottom: 8px;">
-                    <label>開始ホール</label>
-                    <select id="startHoleInput">
+                    <label style="flex: 0 0 90px;">開始ホール</label>
+                    <select id="startHoleInput" style="flex:1;">
                         <option value="1">1番ホール (OUTスタート)</option>
                         <option value="10">10番ホール (INスタート)</option>
                     </select>
                 </div>
                 
-                <hr style="border: 0; border-top: 1px solid #444; margin: 10px 0;">
+                <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
                 <div style="font-size: 0.85rem; color: #aaa; margin-bottom: 5px; font-weight: bold;">各ホールのパー数設定</div>
                 <div id="parInputContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px;">
-                    <div><span>H1:</span><select id="parHole1"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H2:</span><select id="parHole2"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H3:</span><select id="parHole3"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H4:</span><select id="parHole4"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H5:</span><select id="parHole5"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H6:</span><select id="parHole6"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H7:</span><select id="parHole7"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H8:</span><select id="parHole8"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H9:</span><select id="parHole9"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H10:</span><select id="parHole10"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H11:</span><select id="parHole11"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H12:</span><select id="parHole12"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H13:</span><select id="parHole13"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H14:</span><select id="parHole14"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H15:</span><select id="parHole15"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H16:</span><select id="parHole16"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H17:</span><select id="parHole17"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
-                    <div><span>H18:</span><select id="parHole18"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div>
+                    <!-- JSで一括生成 -->
                 </div>
                 
-                <button class="btn" id="startBtn">GAME START</button>
+                <button class="btn" id="startBtn" style="margin-top: 20px;">GAME START</button>
             </div>
         </div>
     </div>
 
     <div id="gameView" class="view-section">
         <div class="sticky-header">
-            <div style="font-size: 0.8rem; text-align: center; margin-bottom: 5px; font-weight: bold;">TOTAL CHIPS</div>
+            <div style="font-size: 0.8rem; text-align: center; margin-bottom: 5px; font-weight: bold;">TOTAL CHIPS (初期ハンデ込)</div>
             <div class="totals-grid">
                 <div><div class="totals-name" id="h-name0">A</div><div id="h-total0">0</div><div class="totals-pt" id="h-yen0">¥0</div></div>
                 <div><div class="totals-name" id="h-name1">B</div><div id="h-total1">0</div><div class="totals-pt" id="h-yen1">¥0</div></div>
@@ -274,39 +283,35 @@
                         </select>
                     </span>
                 </div>
+                
+                <div style="font-size:0.8rem; color:#aaa; margin-bottom:10px; text-align:center;" id="rotationInfo"></div>
 
-                <div id="errorMsg" class="error-msg">打者が重複しています！異なる4名を選択してください。</div>
-
-                <div class="score-row">
-                    <label>オナー<br><span style="font-size:0.7rem; font-weight:normal; color:#ff007f;">(ﾁｰﾑX)</span></label>
-                    <select id="b1_player"></select>
-                    <select id="b1_score" class="score-select"></select>
+                <div class="score-row" id="row0">
+                    <div class="player-label"><span id="lbl_name0">Player1</span><span class="team-badge" id="lbl_team0"></span></div>
+                    <select id="score0" class="score-select"></select>
                 </div>
-                <div class="score-row">
-                    <label>2nd<br><span style="font-size:0.7rem; font-weight:normal; color:#00e5ff;">(ﾁｰﾑY)</span></label>
-                    <select id="b2_player"></select>
-                    <select id="b2_score" class="score-select"></select>
+                <div class="score-row" id="row1">
+                    <div class="player-label"><span id="lbl_name1">Player2</span><span class="team-badge" id="lbl_team1"></span></div>
+                    <select id="score1" class="score-select"></select>
                 </div>
-                <div class="score-row">
-                    <label>3rd<br><span style="font-size:0.7rem; font-weight:normal; color:#00e5ff;">(ﾁｰﾑY)</span></label>
-                    <select id="b3_player"></select>
-                    <select id="b3_score" class="score-select"></select>
+                <div class="score-row" id="row2">
+                    <div class="player-label"><span id="lbl_name2">Player3</span><span class="team-badge" id="lbl_team2"></span></div>
+                    <select id="score2" class="score-select"></select>
                 </div>
-                <div class="score-row">
-                    <label>4th<br><span style="font-size:0.7rem; font-weight:normal; color:#ff007f;">(ﾁｰﾑX)</span></label>
-                    <select id="b4_player"></select>
-                    <select id="b4_score" class="score-select"></select>
+                <div class="score-row" id="row3">
+                    <div class="player-label"><span id="lbl_name3">Player4</span><span class="team-badge" id="lbl_team3"></span></div>
+                    <select id="score3" class="score-select"></select>
                 </div>
 
                 <div class="hole-result">
                     <div class="result-row">
-                        <span style="color:#ff007f; text-shadow: 0 0 3px #ff007f;">チームX(1&4): <strong id="preview_tA">-</strong></span>
-                        <span style="color:#00e5ff; text-shadow: 0 0 3px #00e5ff;">チームY(2&3): <strong id="preview_tB">-</strong></span>
+                        <span style="color:#ff007f; text-shadow: 0 0 3px #ff007f;">チームX: <strong id="preview_tX">-</strong></span>
+                        <span style="color:#00e5ff; text-shadow: 0 0 3px #00e5ff;">チームY: <strong id="preview_tY">-</strong></span>
                     </div>
                     <div class="result-row" style="margin-top: 5px;">
                         <span style="font-weight:bold; color:#fff;">発生キャリー: <span id="preview_carry" style="color:#ffd700; text-shadow: 0 0 5px #ffd700; font-size:1.2rem;">1x</span></span>
                     </div>
-                    <div class="result-row" style="font-size: 0.85rem; margin-top: 5px; color:#ccc;">
+                    <div class="result-row" style="font-size: 0.85rem; margin-top: 5px; color:#ccc; align-items:center;">
                         <span>移動Pt:</span>
                         <span id="preview_pts" style="color:#fff; font-weight:bold;">-</span>
                     </div>
@@ -331,17 +336,31 @@
 <script>
     const HOLES = 18;
     const RATE = 50;
-    const MAX_DIFF = 20;
+    const MAX_DIFF_NORMAL = 20;
+    const MAX_DIFF_BIRDIE = 50; 
     const MAX_SCORE = 15;
+    const HANDICAP_COEF = 5;
 
     let players = [];
+    let initialPts = [0, 0, 0, 0];
     let holeSequence = [];
     let currentStep = 0; 
     let initialPars = {}; 
     let roundData = []; 
     let currentCarryMultiplier = 1;
+    
+    let tX_indices = [];
+    let tY_indices = [];
 
     (function initApp() {
+        // Setup Par Inputs dynamically
+        const parContainer = document.getElementById('parInputContainer');
+        for(let i=1; i<=18; i++) {
+            let div = document.createElement('div');
+            div.innerHTML = `<span>H${i}:</span><select id="parHole${i}"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select>`;
+            parContainer.appendChild(div);
+        }
+
         const scoreSelects = document.querySelectorAll('.score-select');
         scoreSelects.forEach(sel => {
             sel.innerHTML = '';
@@ -358,10 +377,7 @@
         document.getElementById('backBtn').addEventListener('click', goBack);
         document.getElementById('downloadBtn').addEventListener('click', downloadPNG);
 
-        const changeTriggers = [
-            'currentPar', 'b1_player', 'b1_score', 'b2_player', 'b2_score', 
-            'b3_player', 'b3_score', 'b4_player', 'b4_score'
-        ];
+        const changeTriggers = ['currentPar', 'score0', 'score1', 'score2', 'score3'];
         changeTriggers.forEach(id => {
             let el = document.getElementById(id);
             if(el) el.addEventListener('change', calcPreview);
@@ -369,31 +385,22 @@
     })();
 
     function startGame() {
-        players = [
-            document.getElementById('nameA').value || 'プレイヤー1',
-            document.getElementById('nameB').value || 'プレイヤー2',
-            document.getElementById('nameC').value || 'プレイヤー3',
-            document.getElementById('nameD').value || 'プレイヤー4'
-        ];
-
+        players = [];
+        let avgs = [];
         for(let i=0; i<4; i++) {
+            players.push(document.getElementById(`name${i}`).value || `Player${i+1}`);
+            let avg = parseInt(document.getElementById(`avg${i}`).value, 10);
+            avgs.push(isNaN(avg) ? 100 : avg);
             document.getElementById(`h-name${i}`).textContent = players[i].substring(0,4);
+            document.getElementById(`lbl_name${i}`).textContent = players[i];
         }
 
-        const playerSelects = [
-            document.getElementById('b1_player'), document.getElementById('b2_player'),
-            document.getElementById('b3_player'), document.getElementById('b4_player')
-        ];
-        playerSelects.forEach((sel, index) => {
-            sel.innerHTML = '';
-            for(let i=0; i<4; i++) {
-                let opt = document.createElement('option');
-                opt.value = String(i);
-                opt.textContent = players[i];
-                if(i === index) opt.selected = true; 
-                sel.appendChild(opt);
-            }
-        });
+        // ハンデの自動算出 (係数5の完全ゼロサム)
+        let totalAvg = avgs.reduce((a, b) => a + b, 0) / 4;
+        let ptsCalc = avgs.map(a => Math.round((a - totalAvg) * HANDICAP_COEF));
+        let sum3 = ptsCalc[0] + ptsCalc[1] + ptsCalc[2];
+        ptsCalc[3] = -sum3; // 端数調整で確実にゼロにする
+        initialPts = ptsCalc;
 
         let sHole = parseInt(document.getElementById('startHoleInput').value, 10);
         holeSequence = [];
@@ -431,63 +438,64 @@
         document.getElementById('backBtn').style.display = (currentStep > 0) ? 'block' : 'none';
         document.getElementById('nextBtn').textContent = (currentStep === 17) ? 'SAVE & FINISH (終了)' : 'SAVE & NEXT';
 
-        if (roundData[currentStep]) {
-            let data = roundData[currentStep];
-            document.getElementById('currentPar').value = String(data.par);
-            for(let j=1; j<=4; j++) {
-                document.getElementById(`b${j}_player`).value = String(data.batters[j-1]);
-                document.getElementById(`b${j}_score`).value = String(data.scores[j-1]);
-            }
+        // 3ホールローテーションのチーム分け判定
+        let hMod = actualHole % 3;
+        if (hMod === 1) {
+            tX_indices = [0, 1]; tY_indices = [2, 3];
+            document.getElementById('rotationInfo').textContent = "ローテーション: 1番・2番 vs 3番・4番";
+        } else if (hMod === 2) {
+            tX_indices = [0, 2]; tY_indices = [1, 3];
+            document.getElementById('rotationInfo').textContent = "ローテーション: 1番・3番 vs 2番・4番";
         } else {
-            document.getElementById('currentPar').value = String(initialPars[String(actualHole)] || "4");
+            tX_indices = [0, 3]; tY_indices = [1, 2];
+            document.getElementById('rotationInfo').textContent = "ローテーション: 1番・4番 vs 2番・3番";
+        }
 
-            let currentOrder = [0, 1, 2, 3]; 
-            if (currentStep > 0) {
-                let prevData = roundData[currentStep - 1];
-                currentOrder.sort((a, b) => {
-                    let idxA = prevData.batters.indexOf(a);
-                    let idxB = prevData.batters.indexOf(b);
-                    let scoreA = prevData.scores[idxA];
-                    let scoreB = prevData.scores[idxB];
-                    if (scoreA !== scoreB) return scoreA - scoreB;
-                    return idxA - idxB;
-                });
-            }
-
-            for(let j=1; j<=4; j++) {
-                document.getElementById(`b${j}_player`).value = String(currentOrder[j-1]);
-                document.getElementById(`b${j}_score`).value = '4';
+        // UIのチームカラーを更新
+        for(let i=0; i<4; i++) {
+            let row = document.getElementById(`row${i}`);
+            let badge = document.getElementById(`lbl_team${i}`);
+            row.classList.remove('team-x', 'team-y');
+            if(tX_indices.includes(i)) {
+                row.classList.add('team-x');
+                badge.textContent = "(チームX)";
+            } else {
+                row.classList.add('team-y');
+                badge.textContent = "(チームY)";
             }
         }
 
-        document.getElementById('errorMsg').style.display = 'none';
+        // スコアとパーの復元/初期化
+        if (roundData[currentStep]) {
+            let data = roundData[currentStep];
+            document.getElementById('currentPar').value = String(data.par);
+            for(let j=0; j<4; j++) {
+                document.getElementById(`score${j}`).value = String(data.scores[j]);
+            }
+        } else {
+            document.getElementById('currentPar').value = String(initialPars[String(actualHole)] || "4");
+            for(let j=0; j<4; j++) {
+                document.getElementById(`score${j}`).value = '4';
+            }
+        }
+
         calcPreview();
     }
 
     function calcPreview() {
         let par = parseInt(document.getElementById('currentPar').value, 10);
-        let b = [], s = [];
-        
-        for(let j=1; j<=4; j++) {
-            b[j-1] = parseInt(document.getElementById(`b${j}_player`).value, 10);
-            s[j-1] = parseInt(document.getElementById(`b${j}_score`).value, 10);
+        let s = [];
+        for(let j=0; j<4; j++) {
+            s[j] = parseInt(document.getElementById(`score${j}`).value, 10);
         }
 
-        let uniqueBatters = new Set(b);
-        if(uniqueBatters.size !== 4) {
-            document.getElementById('errorMsg').style.display = 'block';
-            resetPreviewDisplay();
-            return null;
-        } else {
-            document.getElementById('errorMsg').style.display = 'none';
-        }
-
-        let tX_scores = [s[0], s[3]];
-        let tY_scores = [s[1], s[2]];
+        let tX_scores = [s[tX_indices[0]], s[tX_indices[1]]];
+        let tY_scores = [s[tY_indices[0]], s[tY_indices[1]]];
 
         let tX_birdie = (tX_scores[0] < par) || (tX_scores[1] < par);
         let tY_birdie = (tY_scores[0] < par) || (tY_scores[1] < par);
 
+        // 指定通り加算バグを残す計算式
         let calcVegas = (scores, reverse) => {
             let min = Math.min(...scores);
             let max = Math.max(...scores);
@@ -500,32 +508,42 @@
         let tX_val = calcVegas(tX_scores, tX_reverse);
         let tY_val = calcVegas(tY_scores, tY_reverse);
 
-        document.getElementById('preview_tA').textContent = tX_val;
-        document.getElementById('preview_tB').textContent = tY_val;
+        document.getElementById('preview_tX').textContent = tX_val;
+        document.getElementById('preview_tY').textContent = tY_val;
 
         let diff = Math.abs(tX_val - tY_val);
-        if(diff > MAX_DIFF) diff = MAX_DIFF;
+        let activeMaxDiff = (tX_birdie || tY_birdie) ? MAX_DIFF_BIRDIE : MAX_DIFF_NORMAL;
+        let isLimitBreak = diff > MAX_DIFF_NORMAL;
+
+        if(diff > activeMaxDiff) diff = activeMaxDiff;
 
         let pts = diff * currentCarryMultiplier;
         let isTie = (tX_val === tY_val);
 
         document.getElementById('preview_carry').textContent = currentCarryMultiplier + 'x';
-        document.getElementById('preview_pts').textContent = pts;
+        
+        let previewPtsEl = document.getElementById('preview_pts');
+        if (isLimitBreak) {
+            previewPtsEl.innerHTML = `<span style="color:#ff1744; font-size:1.2rem; text-shadow: 0 0 8px #ff1744;">🔥${pts} (限界突破)</span>`;
+        } else {
+            previewPtsEl.textContent = pts;
+        }
 
         let move = [0, 0, 0, 0];
         if (!isTie) {
             if (tX_val < tY_val) {
-                move[b[0]] = pts; move[b[3]] = pts;
-                move[b[1]] = -pts; move[b[2]] = -pts;
+                // Team X Wins
+                move[tX_indices[0]] = pts; move[tX_indices[1]] = pts;
+                move[tY_indices[0]] = -pts; move[tY_indices[1]] = -pts;
             } else {
-                move[b[0]] = -pts; move[b[3]] = -pts;
-                move[b[1]] = pts; move[b[2]] = pts;
+                // Team Y Wins
+                move[tX_indices[0]] = -pts; move[tX_indices[1]] = -pts;
+                move[tY_indices[0]] = pts; move[tY_indices[1]] = pts;
             }
         }
 
         return {
             par: par,
-            batters: b,
             scores: s,
             tX_val: tX_val,
             tY_val: tY_val,
@@ -535,16 +553,8 @@
         };
     }
 
-    function resetPreviewDisplay() {
-        document.getElementById('preview_tA').textContent = '-';
-        document.getElementById('preview_tB').textContent = '-';
-        document.getElementById('preview_pts').textContent = '-';
-    }
-
     function goToNextHole() {
         let result = calcPreview();
-        if(!result) return; 
-
         roundData[currentStep] = result;
 
         if (result.isTie) {
@@ -567,38 +577,18 @@
     function goBack() {
         if(currentStep > 0) {
             currentStep--;
-            let totals = [0, 0, 0, 0];
             currentCarryMultiplier = 1;
-            
             for(let i=0; i<currentStep; i++) {
-                let data = roundData[i];
-                for(let p=0; p<4; p++) totals[p] += data.move[p];
-                if(data.isTie) currentCarryMultiplier++;
+                if(roundData[i].isTie) currentCarryMultiplier++;
                 else currentCarryMultiplier = 1;
             }
-            
-            for(let i=0; i<4; i++) {
-                let elTotal = document.getElementById(`h-total${i}`);
-                let elYen = document.getElementById(`h-yen${i}`);
-                
-                let color = totals[i] > 0 ? '#00e5ff' : (totals[i] < 0 ? '#ff1744' : '#ffffff');
-                let sign = totals[i] > 0 ? '+' : '';
-                
-                elTotal.textContent = sign + totals[i];
-                elTotal.style.color = color;
-                elTotal.style.textShadow = `0 0 3px ${color}`;
-                
-                elYen.textContent = (totals[i] >= 0 ? '¥' : '-¥') + Math.abs(totals[i] * RATE);
-                elYen.style.color = color;
-                elYen.style.textShadow = `0 0 3px ${color}`;
-            }
-            
+            updateHeaderTotals();
             renderCurrentHole();
         }
     }
 
     function updateHeaderTotals() {
-        let totals = [0, 0, 0, 0];
+        let totals = [...initialPts];
         for(let i=0; i<=currentStep; i++) {
             if(roundData[i]) {
                 for(let p=0; p<4; p++) totals[p] += roundData[i].move[p];
@@ -630,15 +620,24 @@
         for(let i=0; i<4; i++) html += `<th>${players[i].substring(0,4)}</th>`;
         html += '</tr>';
         
-        let totals = [0, 0, 0, 0];
+        // 初期ハンデ行の表示
+        html += '<tr style="background-color: rgba(255,255,255,0.1);"><td colspan="2" style="font-size:0.7rem; color:#aaa;">初期ハンデ</td>';
+        for(let i=0; i<4; i++) {
+            let pt = initialPts[i];
+            let color = pt > 0 ? '#00e5ff' : (pt < 0 ? '#ff1744' : '#aaaaaa');
+            let sign = pt > 0 ? '+' : '';
+            html += `<td style="color:${color}; font-weight:bold;">${sign}${pt}</td>`;
+        }
+        html += '</tr>';
+
+        let totals = [...initialPts];
         
         for(let i=0; i<HOLES; i++) {
             let d = roundData[i];
             let hNum = holeSequence[i];
             html += `<tr><td>${hNum}</td><td>${d.par}</td>`;
             for(let p=0; p<4; p++) {
-                let bIndex = d.batters.indexOf(p);
-                let score = d.scores[bIndex];
+                let score = d.scores[p];
                 let move = d.move[p];
                 let moveStr = move > 0 ? `+${move}` : (move === 0 ? '±0' : String(move));
                 let color = move > 0 ? '#00e5ff' : (move < 0 ? '#ff1744' : '#aaaaaa');
@@ -660,58 +659,12 @@
     }
 
     function downloadPNG() {
-        let btn = document.getElementById('downloadBtn');
-        let originalText = btn.textContent;
-        btn.textContent = "画像生成中...少し待つっす！";
-        btn.disabled = true;
-
         let target = document.getElementById('captureArea');
         html2canvas(target, { scale: 2, backgroundColor: '#11081f' }).then(canvas => {
-            try {
-                // 生成された画像データ
-                let imgData = canvas.toDataURL('image/png');
-                
-                // 1. 通常のダウンロード処理（Safari / Chrome向け）
-                let link = document.createElement('a');
-                link.download = 'lasvegas_casino_result.png';
-                link.href = imgData;
-                link.click();
-                
-                // 2. 完了の知らせ（アラート）
-                alert("画像の生成が完了したっす！\n※自動でダウンロードされない場合（LINE等）は、画面下に出現した画像を長押しして保存してほしいっす！");
-
-                // 3. LINEブラウザ等への堅牢な対策（画面上に実体画像を出力して長押し保存させる）
-                let existingImgBox = document.getElementById('fallback-container');
-                if(!existingImgBox) {
-                    let container = document.createElement('div');
-                    container.id = 'fallback-container';
-                    container.style.marginTop = "20px";
-                    container.style.textAlign = "center";
-                    container.style.color = "#ffd700";
-                    container.style.fontSize = "0.85rem";
-                    container.innerHTML = "▼自動保存されない場合は、下の画像を長押しして「" + (navigator.userAgent.match(/iPhone|iPad|iPod/i) ? "写真に追加" : "画像を保存") + "」を選んでください▼<br>";
-                    
-                    let img = document.createElement('img');
-                    img.id = 'fallback-img';
-                    img.src = imgData;
-                    img.style.maxWidth = "100%";
-                    img.style.border = "2px solid #00e5ff";
-                    img.style.borderRadius = "8px";
-                    img.style.marginTop = "10px";
-                    img.style.boxShadow = "0 0 15px rgba(0,229,255,0.4)";
-                    
-                    container.appendChild(img);
-                    document.getElementById('resultView').querySelector('.container').appendChild(container);
-                } else {
-                    document.getElementById('fallback-img').src = imgData;
-                }
-            } catch (error) {
-                alert("画像保存中にエラーが起きたっす: " + error.message);
-            } finally {
-                // ボタンの状態を元に戻す
-                btn.textContent = originalText;
-                btn.disabled = false;
-            }
+            let link = document.createElement('a');
+            link.download = 'lasvegas_casino_result.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         });
     }
 </script>
