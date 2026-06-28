@@ -6,9 +6,7 @@
 <title>ラスベガス集計アプリ(完全スクラッチ・打順ベース仕様)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-    *, *::before, *::after {
-        box-sizing: border-box;
-    }
+    *, *::before, *::after { box-sizing: border-box; }
 
     body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -106,7 +104,10 @@
         color: #ccc;
         font-weight: bold;
     }
+    /* LINE内ブラウザ対策: appearance: auto を強制 */
     select, input[type="text"], input[type="number"] {
+        appearance: auto;
+        -webkit-appearance: auto;
         padding: 10px;
         border: 1px solid #555;
         border-radius: 4px;
@@ -114,15 +115,8 @@
         background-color: #111;
         color: #fff;
     }
-    .name-input { 
-        flex: 1; 
-        min-width: 0; 
-    }
-    .avg-input { 
-        flex: 0 0 85px; 
-        text-align: center; 
-        padding: 10px 5px; 
-    }
+    .name-input { flex: 1; min-width: 0; }
+    .avg-input { flex: 0 0 85px; text-align: center; }
     
     select:focus, input:focus {
         outline: none;
@@ -139,32 +133,14 @@
         padding: 8px;
         border-radius: 6px;
     }
-    .score-row.team-x {
-        border: 1px solid #ff007f;
-        box-shadow: inset 0 0 8px rgba(255,0,127,0.2);
-    }
-    .score-row.team-y {
-        border: 1px solid #00e5ff;
-        box-shadow: inset 0 0 8px rgba(0,229,255,0.2);
-    }
+    .score-row.team-x { border: 1px solid #ff007f; box-shadow: inset 0 0 8px rgba(255,0,127,0.2); }
+    .score-row.team-y { border: 1px solid #00e5ff; box-shadow: inset 0 0 8px rgba(0,229,255,0.2); }
 
     .score-row label {
-        flex: 0 0 45px;
-        font-size: 0.85rem; 
-        font-weight: bold;
-        color: #fff; 
-        text-align: center;
+        flex: 0 0 45px; font-size: 0.85rem; font-weight: bold; color: #fff; text-align: center;
     }
-    .score-row .player-select {
-        flex: 1;
-        min-width: 0;
-    }
-    .score-row .score-select {
-        flex: 0 0 85px;
-        text-align: center;
-        font-size: 1.1rem;
-        padding: 8px 4px;
-    }
+    .score-row .player-select { flex: 1; min-width: 0; }
+    .score-row .score-select { flex: 0 0 75px; text-align: center; font-size: 1rem; }
     
     .hole-result {
         background: rgba(255, 215, 0, 0.1);
@@ -175,11 +151,7 @@
         border: 1px solid #ffd700;
         box-shadow: inset 0 0 10px rgba(255,215,0,0.1);
     }
-    .result-row {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 8px;
-    }
+    .result-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
     
     .btn {
         background: linear-gradient(90deg, #ff007f, #7f00ff);
@@ -198,56 +170,33 @@
         text-shadow: 0 0 3px #fff;
     }
     .btn:active { transform: scale(0.98); }
-    .btn-secondary { 
-        background: transparent; 
-        border: 1px solid #aaa; 
-        color: #aaa; 
-        box-shadow: none; 
-        text-shadow: none; 
-        margin-top: 15px;
-    }
-    .btn-info { 
-        background: linear-gradient(90deg, #00e5ff, #007fff);
-        box-shadow: 0 0 10px rgba(0,229,255,0.5);
-        padding: 12px; 
-        font-size: 1rem; 
-    }
+    .btn-secondary { background: transparent; border: 1px solid #aaa; color: #aaa; box-shadow: none; text-shadow: none; }
+    .btn-info { background: linear-gradient(90deg, #00e5ff, #007fff); box-shadow: 0 0 10px rgba(0,229,255,0.5); padding: 12px; font-size: 1rem; }
+    .btn-scorecard { background: rgba(0, 0, 0, 0.8); border: 1px solid #ffd700; color: #ffd700; font-size: 0.9rem; padding: 10px; margin-top: 15px; }
 
     .error-msg {
-        color: #ff1744;
-        font-size: 0.85rem;
-        text-align: center;
-        margin-bottom: 10px;
-        font-weight: bold;
-        text-shadow: 0 0 5px #ff1744;
-        display: none;
+        color: #ff1744; font-size: 0.85rem; text-align: center; margin-bottom: 10px; font-weight: bold; text-shadow: 0 0 5px #ff1744; display: none;
     }
 
-    .result-table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: center;
-        font-size: 0.75rem;
-    }
-    .result-table th, .result-table td {
-        border: 1px solid #444;
-        padding: 2px 1px;
-        line-height: 1.1;
-        color: #fff;
-    }
-    .result-table th {
-        background-color: #1a0b2e;
-        color: #ffd700;
-        padding: 4px 1px;
-    }
-    .result-table tr:nth-child(even) td {
-        background-color: rgba(255,255,255,0.05);
-    }
+    .result-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.75rem; }
+    .result-table th, .result-table td { border: 1px solid #444; padding: 4px 2px; color: #fff; }
+    .result-table th { background-color: #1a0b2e; color: #ffd700; }
+    .result-table tr:nth-child(even) td { background-color: rgba(255,255,255,0.05); }
     
-    #captureArea {
-        background: #11081f !important;
-        border: 2px solid #00e5ff;
-        box-shadow: 0 0 15px rgba(0,229,255,0.3);
+    #captureArea { background: #11081f !important; border: 2px solid #00e5ff; box-shadow: 0 0 15px rgba(0,229,255,0.3); }
+
+    /* モーダル用スタイル */
+    .modal-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center;
+    }
+    .modal-content {
+        background: #1a0b2e; width: 95%; max-width: 450px; max-height: 85vh;
+        border-radius: 8px; border: 1px solid #00e5ff; padding: 15px; overflow-y: auto; box-shadow: 0 0 20px #00e5ff;
+    }
+    .modal-close {
+        background: #ff007f; color: #fff; border: none; padding: 10px; width: 100%;
+        border-radius: 4px; margin-top: 15px; font-weight: bold; cursor: pointer;
     }
 </style>
 </head>
@@ -261,11 +210,11 @@
                 <div class="info-box">
                     名前と自己申告スコア（70〜130）を入力してください。<br>
                     プレイヤー間の実力差を埋め、白熱した勝負ができるよう<strong style="color:#00e5ff;">フェアなハンデ（初期チップ）</strong>を自動算出します。<br>
-                    <span style="font-size: 0.75rem; color: #aaa;">※トッププレイヤーにはスコアに応じた特別補正（重税）を適用し、その差額を中位プレイヤーへ再分配することでゲームバランスを保ちます（完全ゼロサム）。</span>
+                    <span style="font-size: 0.75rem; color: #aaa;">※トッププレイヤーには実力差に応じた特別補正（重税）を適用し、その差額を中位プレイヤーへ再分配することでゲームバランスを保ちます（完全ゼロサム）。</span>
                     <div class="info-formula">
                         <div style="margin-bottom: 6px; font-weight: bold; text-align: center; color:#fff;">【ハンデの算出方法】</div>
                         <div style="margin-bottom: 4px;"><strong>① 基本チップ:</strong> <span style="color:#fff;">(申告スコア − 全員平均) × 5</span></div>
-                        <div style="margin-bottom: 4px;"><strong>② トップ補正:</strong> <span style="color:#fff;">(トップ申告 − 全員平均) × (1 − トップ申告 ÷ 全員平均) × 50</span></div>
+                        <div style="margin-bottom: 4px;"><strong>② トップ補正:</strong> <span style="color:#fff;">基本チップ × (2 − トップ申告 ÷ 全員平均)</span></div>
                         <div><strong>③ 再分配処理:</strong> <span style="color:#fff;">①と②の差額を 2番手(70%) と 3番手(30%) にプラス</span></div>
                     </div>
                 </div>
@@ -273,22 +222,22 @@
                 <div class="input-group">
                     <label>オナー</label>
                     <input type="text" id="name0" class="name-input" value="プレイヤー1">
-                    <select id="avg0" class="avg-input" title="平均スコア"></select>
+                    <select id="avg0" class="avg-input"></select>
                 </div>
                 <div class="input-group">
                     <label>2nd</label>
                     <input type="text" id="name1" class="name-input" value="プレイヤー2">
-                    <select id="avg1" class="avg-input" title="平均スコア"></select>
+                    <select id="avg1" class="avg-input"></select>
                 </div>
                 <div class="input-group">
                     <label>3rd</label>
                     <input type="text" id="name2" class="name-input" value="プレイヤー3">
-                    <select id="avg2" class="avg-input" title="平均スコア"></select>
+                    <select id="avg2" class="avg-input"></select>
                 </div>
                 <div class="input-group">
                     <label>4th</label>
                     <input type="text" id="name3" class="name-input" value="プレイヤー4">
-                    <select id="avg3" class="avg-input" title="平均スコア"></select>
+                    <select id="avg3" class="avg-input"></select>
                 </div>
                 
                 <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
@@ -304,7 +253,7 @@
                 <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
                 <div style="font-size: 0.85rem; color: #aaa; margin-bottom: 5px; font-weight: bold;">各ホールのパー数設定</div>
                 <div id="parInputContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px;">
-                    </div>
+                </div>
                 
                 <button class="btn" id="startBtn" style="margin-top: 20px;">GAME START</button>
             </div>
@@ -371,7 +320,10 @@
                 </div>
 
                 <button class="btn" id="nextBtn">SAVE & NEXT</button>
-                <button class="btn btn-secondary" id="backBtn" style="display:none;">UNDO (戻る)</button>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-secondary" id="backBtn" style="flex:1; display:none;">UNDO</button>
+                    <button class="btn btn-scorecard" id="showScorecardBtn" style="flex:1;">途中経過確認</button>
+                </div>
             </div>
         </div>
     </div>
@@ -383,6 +335,14 @@
                 <div id="resultTableContainer"></div>
             </div>
             <button class="btn btn-info" id="downloadBtn" style="margin-top: 8px;">結果をPNG画像でダウンロード</button>
+        </div>
+    </div>
+
+    <div id="scorecardModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color:#00e5ff; text-align:center; margin-top:0; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:10px;">途中経過 (SCORECARD)</h3>
+            <div id="scorecardContent"></div>
+            <button class="modal-close" id="closeScorecardBtn">閉じる</button>
         </div>
     </div>
 
@@ -437,6 +397,10 @@
         document.getElementById('nextBtn').addEventListener('click', goToNextHole);
         document.getElementById('backBtn').addEventListener('click', goBack);
         document.getElementById('downloadBtn').addEventListener('click', downloadPNG);
+        document.getElementById('showScorecardBtn').addEventListener('click', showScorecard);
+        document.getElementById('closeScorecardBtn').addEventListener('click', () => {
+            document.getElementById('scorecardModal').style.display = 'none';
+        });
 
         const changeTriggers = [
             'currentPar', 'b1_player', 'b1_score', 'b2_player', 'b2_score',
@@ -458,7 +422,7 @@
             document.getElementById(`h-name${i}`).textContent = players[i].substring(0,4);
         }
 
-        // --- トップ重税＆中間再分配ロジック ---
+        // --- トップ重税＆中間再分配ロジック（新方式） ---
         let totalAvg = avgs.reduce((a, b) => a + b, 0) / 4;
         let basePts = avgs.map(a => (a - totalAvg) * HANDICAP_COEF);
 
@@ -469,9 +433,10 @@
         let fourthIdx = sortedIndices[3];
 
         let S = avgs[topIdx];
-        // トップの計算： (S - avg) * (1 - S/avg) * 50
-        let topNewPt = (S - totalAvg) * (1 - (S / totalAvg)) * 50; 
-        let tax = basePts[topIdx] - topNewPt; // 重税で生まれた財源
+        
+        // 【修正】新方式：基本チップ × (2 - トップ申告 / 全員平均)
+        let topNewPt = basePts[topIdx] * (2 - (S / totalAvg)); 
+        let tax = basePts[topIdx] - topNewPt; 
 
         let ptsCalc = [...basePts];
         ptsCalc[topIdx] = topNewPt;
@@ -481,7 +446,6 @@
             ptsCalc[thirdIdx] += tax * 0.3;  // 3番手に30%
         }
 
-        // 端数調整（完全ゼロサム）
         ptsCalc[topIdx] = Math.round(ptsCalc[topIdx]);
         ptsCalc[secondIdx] = Math.round(ptsCalc[secondIdx]);
         ptsCalc[thirdIdx] = Math.round(ptsCalc[thirdIdx]);
@@ -720,6 +684,67 @@
         }
     }
 
+    // 途中経過のスコアカードを生成して表示
+    function showScorecard() {
+        let container = document.getElementById('scorecardContent');
+        let html = '<table class="result-table" style="font-size: 0.8rem;">';
+        html += '<tr><th style="width:12%">Hole</th>';
+        for(let i=0; i<4; i++) html += `<th>${players[i].substring(0,4)}</th>`;
+        html += '</tr>';
+        
+        let totals = [...initialPts];
+        let totalStrokes = [0, 0, 0, 0];
+
+        // ハンデ行
+        html += '<tr style="background-color: rgba(255,255,255,0.1);"><td style="font-size:0.7rem; color:#aaa;">ハンデ</td>';
+        for(let i=0; i<4; i++) {
+            let pt = initialPts[i];
+            let color = pt > 0 ? '#00e5ff' : (pt < 0 ? '#ff1744' : '#aaaaaa');
+            let sign = pt > 0 ? '+' : '';
+            html += `<td style="color:${color}; font-weight:bold;">${sign}${pt}pt</td>`;
+        }
+        html += '</tr>';
+
+        // 完了したホールの履歴
+        for(let i=0; i<currentStep; i++) {
+            let d = roundData[i];
+            let hNum = holeSequence[i];
+            html += `<tr><td>H${hNum}</td>`;
+            for(let p=0; p<4; p++) {
+                let bIndex = d.batters.indexOf(p);
+                let score = d.scores[bIndex];
+                let move = d.move[p];
+                let moveStr = move > 0 ? `+${move}` : (move === 0 ? '±0' : String(move));
+                let color = move > 0 ? '#00e5ff' : (move < 0 ? '#ff1744' : '#aaaaaa');
+                
+                totals[p] += move;
+                totalStrokes[p] += score;
+
+                html += `<td>${score}打<br><span style="font-size:0.7rem;color:${color};">${moveStr}</span></td>`;
+            }
+            html += '</tr>';
+        }
+
+        // 現在の累計
+        html += '<tr style="background-color: rgba(255,215,0,0.15); font-weight: bold; border-top: 2px solid #ffd700;"><td>累計<br><span style="font-size:0.6rem; color:#aaa;">(打数|Pt)</span></td>';
+        for(let i=0; i<4; i++) {
+            let color = totals[i] > 0 ? '#00e5ff' : (totals[i] < 0 ? '#ff1744' : '#ffffff');
+            let sign = totals[i] > 0 ? '+' : '';
+            html += `<td style="padding: 6px 2px;">
+                        <span style="color:#fff;">${totalStrokes[i]}打</span><br>
+                        <span style="color:${color}; font-size:0.9rem;">${sign}${totals[i]}pt</span>
+                    </td>`;
+        }
+        html += '</tr></table>';
+
+        if (currentStep === 0) {
+            html += '<div style="text-align:center; font-size:0.8rem; margin-top:10px; color:#aaa;">まだ完了したホールはありません。</div>';
+        }
+
+        container.innerHTML = html;
+        document.getElementById('scorecardModal').style.display = 'flex';
+    }
+
     function showResultView() {
         switchView('resultView');
         
@@ -729,7 +754,6 @@
         for(let i=0; i<4; i++) html += `<th>${players[i].substring(0,4)}</th>`;
         html += '</tr>';
         
-        // 初期ハンデ行の表示
         html += '<tr style="background-color: rgba(255,255,255,0.1);"><td colspan="2" style="font-size:0.7rem; color:#aaa;">初期ハンデ</td>';
         for(let i=0; i<4; i++) {
             let pt = initialPts[i];
@@ -740,6 +764,7 @@
         html += '</tr>';
 
         let totals = [...initialPts];
+        let totalStrokes = [0, 0, 0, 0];
         
         for(let i=0; i<HOLES; i++) {
             let d = roundData[i];
@@ -753,11 +778,17 @@
                 let color = move > 0 ? '#00e5ff' : (move < 0 ? '#ff1744' : '#aaaaaa');
                 html += `<td><span style="font-size:0.85rem;font-weight:bold;">${score}</span><br><span style="font-size:0.65rem;color:${color};text-shadow:0 0 2px ${color};">${moveStr}</span></td>`;
                 totals[p] += move;
+                totalStrokes[p] += score;
             }
             html += '</tr>';
         }
         
-        html += '<tr style="background-color: rgba(255,215,0,0.15); font-weight: bold; border-top: 2px solid #ffd700;"><td>計</td><td>-</td>';
+        // 最終リザルトにも総打数を追加
+        html += '<tr style="background-color: rgba(255,255,255,0.05); font-weight: bold; border-top: 1px solid #444;"><td>総打数</td><td>-</td>';
+        for(let i=0; i<4; i++) html += `<td>${totalStrokes[i]}</td>`;
+        html += '</tr>';
+
+        html += '<tr style="background-color: rgba(255,215,0,0.15); font-weight: bold; border-top: 2px solid #ffd700;"><td>総Pt</td><td>-</td>';
         for(let i=0; i<4; i++) {
             let color = totals[i] > 0 ? '#00e5ff' : (totals[i] < 0 ? '#ff1744' : '#ffffff');
             let sign = totals[i] > 0 ? '+' : '';
