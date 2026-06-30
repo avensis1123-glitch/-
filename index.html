@@ -213,9 +213,13 @@
                     <span style="font-size: 0.75rem; color: #aaa;">※トッププレイヤーには実力差に応じた特別補正（重税）を適用し、その差額を中位プレイヤーへ再分配することでゲームバランスを保ちます（完全ゼロサム）。</span>
                     <div class="info-formula">
                         <div style="margin-bottom: 6px; font-weight: bold; text-align: center; color:#fff;">【ハンデの算出方法】</div>
-                        <div style="margin-bottom: 4px;"><strong>① 基本チップ:</strong> <span style="color:#fff;">(申告スコア − 全員平均) × 5</span></div>
+                        <div style="margin-bottom: 4px;"><strong>① 基本チップ:</strong> <span style="color:#fff;">(申告スコア − 全員平均) × <span style="color:#ff007f;">係数</span></span></div>
                         <div style="margin-bottom: 4px;"><strong>② トップ補正:</strong> <span style="color:#fff;">基本チップ × (2 − トップ申告 ÷ 全員平均)</span></div>
                         <div><strong>③ 再分配処理:</strong> <span style="color:#fff;">①と②の差額を 2番手(70%) と 3番手(30%) にプラス</span></div>
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,215,0,0.4); font-size: 0.75rem; color: #eee; line-height: 1.4;">
+                            <strong style="color:#ffd700;">※係数の推奨設定：</strong><br>
+                            実力差が<strong>小さい</strong>場合は「<strong>5</strong>」、実力差が<strong>大きい</strong>場合（100切りと120以上が混在等）は「<strong>6</strong>」を推奨します。
+                        </div>
                     </div>
                 </div>
 
@@ -242,6 +246,14 @@
                 
                 <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
                 
+                <div class="input-group" style="margin-bottom: 8px;">
+                    <label style="flex: 0 0 75px;">ハンデ係数</label>
+                    <select id="coefInput" style="flex:1;">
+                        <option value="5">5 (実力差: 小〜中)</option>
+                        <option value="6">6 (実力差: 大)</option>
+                    </select>
+                </div>
+
                 <div class="input-group" style="margin-bottom: 8px;">
                     <label style="flex: 0 0 75px;">開始ホール</label>
                     <select id="startHoleInput" style="flex:1;">
@@ -352,7 +364,6 @@
     const MAX_DIFF_NORMAL = 20;
     const MAX_DIFF_BIRDIE = 50; 
     const MAX_SCORE = 15;
-    const HANDICAP_COEF = 5;
 
     let players = [];
     let initialPts = [0, 0, 0, 0];
@@ -424,7 +435,11 @@
 
         // --- トップ重税＆中間再分配ロジック（新方式） ---
         let totalAvg = avgs.reduce((a, b) => a + b, 0) / 4;
-        let basePts = avgs.map(a => (a - totalAvg) * HANDICAP_COEF);
+        
+        // 選択されたハンデ係数を取得
+        let selectedCoef = parseInt(document.getElementById('coefInput').value, 10);
+        
+        let basePts = avgs.map(a => (a - totalAvg) * selectedCoef);
 
         let sortedIndices = [0, 1, 2, 3].sort((a, b) => avgs[a] - avgs[b]);
         let topIdx = sortedIndices[0];
@@ -434,7 +449,7 @@
 
         let S = avgs[topIdx];
         
-        // 【修正】新方式：基本チップ × (2 - トップ申告 / 全員平均)
+        // 新方式：基本チップ × (2 - トップ申告 / 全員平均)
         let topNewPt = basePts[topIdx] * (2 - (S / totalAvg)); 
         let tax = basePts[topIdx] - topNewPt; 
 
